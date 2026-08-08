@@ -39,14 +39,16 @@ def handler(event, context):
         increment_usage(user_id)
 
         # Send to SQS for async processing
-        sqs.send_message(
-            QueueUrl=QUEUE_URL,
-            MessageBody=json.dumps({
+        msg_params = {
+            'QueueUrl': QUEUE_URL,
+            'MessageBody': json.dumps({
                 'userId': user_id,
                 'key': key,
             }),
-            MessageGroupId=user_id if QUEUE_URL.endswith('.fifo') else None,
-        )
+        }
+        if QUEUE_URL.endswith('.fifo'):
+            msg_params['MessageGroupId'] = user_id
+        sqs.send_message(**msg_params)
 
         return {
             'statusCode': 202,

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './components/AuthProvider';
+import { DEMO_STOCKS, DEMO_FIXED_INCOME, DEMO_INVOICES } from './data/demoData';
 import { LoginPage } from './pages/LoginPage';
 import { Sidebar, type Page } from './components/Sidebar';
 import { HomePage } from './pages/HomePage';
@@ -20,7 +21,7 @@ import { OnboardingTour } from './components/OnboardingTour';
 import { useSimStore } from './hooks/useFeatureGate';
 
 function AppContent() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, isDemo, signOut } = useAuth();
   const [page, setPage] = useState<Page>('home');
   const [syncing, setSyncing] = useState(false);
   const [showTour, setShowTour] = useState(false);
@@ -31,9 +32,18 @@ function AppContent() {
     if (user) localStorage.setItem(`tour-done-${user.sub}`, '1');
   };
 
+  // Load demo data when entering demo mode
+  useEffect(() => {
+    if (!isDemo || !user) return;
+    usePortfolioStore.getState().setStocks(DEMO_STOCKS);
+    useFixedIncomeStore.getState().setItems(DEMO_FIXED_INCOME);
+    useInvoiceStore.getState().setInvoices(DEMO_INVOICES);
+    usePortfolioStore.getState().refreshQuotes();
+  }, [isDemo, user]);
+
   // Load data from cloud when user logs in
   useEffect(() => {
-    if (!user) return;
+    if (!user || isDemo) return;
     enableSync();
     setSyncing(true);
     Promise.all([
@@ -86,7 +96,7 @@ function AppContent() {
       setSyncing(false);
       if (!localStorage.getItem(`tour-done-${user.sub}`)) setShowTour(true);
     });
-  }, [user]);
+  }, [user, isDemo]);
 
   if (authLoading) {
     return (
@@ -109,8 +119,20 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
+      {isDemo && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#d4a017]/20 to-[#b8890f]/20 border-b border-[#d4a017]/30 backdrop-blur-sm">
+          <div className="flex items-center justify-center gap-3 px-4 py-2 text-sm">
+            <span className="bg-[#d4a017] text-[#1a1a1a] px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">Demo</span>
+            <span className="text-[#f0ece4]">Explorando com dados fictícios</span>
+            <button onClick={signOut}
+              className="ml-2 px-3 py-1 bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#d4a017] text-[#d4a017] text-xs rounded-lg transition-all cursor-pointer">
+              Sair do demo
+            </button>
+          </div>
+        </div>
+      )}
       <Sidebar currentPage={page} onNavigate={setPage} userName={user.name ?? user.email} onSignOut={signOut} />
-      <main className="md:ml-16 px-4 py-6 pb-24 md:px-8 md:py-8 md:pb-16">
+      <main className={`md:ml-16 px-4 py-6 pb-24 md:px-8 md:py-8 md:pb-16 ${isDemo ? 'mt-10' : ''}`}>
         {page === 'home' && <HomePage onNavigate={setPage} />}
         {page === 'portfolio' && <PortfolioPage />}
         {page === 'invoices' && <InvoicesPage />}

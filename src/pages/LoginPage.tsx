@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Mail, Lock, User, Loader2, ArrowRight, KeyRound } from 'lucide-react';
+import { Mail, Lock, User, Loader2, ArrowRight, KeyRound, Play } from 'lucide-react';
 import { useAuth } from '../components/AuthProvider';
 import { forgotPassword, confirmForgotPassword } from '../services/authService';
 
 type Mode = 'login' | 'signup' | 'confirm' | 'forgot' | 'reset';
 
 export function LoginPage() {
-  const { signIn, signUp, confirmSignUp } = useAuth();
+  const { signIn, signUp, confirmSignUp, enterDemo } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -166,6 +166,21 @@ export function LoginPage() {
             )}
           </div>
         </form>
+
+        {/* Demo button */}
+        <div className="mt-6 text-center">
+          <div className="relative flex items-center justify-center mb-4">
+            <div className="border-t border-[#2a2a2a] flex-1"></div>
+            <span className="px-4 text-[#8a8580] text-xs uppercase tracking-wider">ou</span>
+            <div className="border-t border-[#2a2a2a] flex-1"></div>
+          </div>
+          <button onClick={enterDemo}
+            className="w-full flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#d4a017]/50 text-[#f0ece4] font-medium py-3 rounded-xl transition-all hover:shadow-[0_4px_12px_rgba(212,160,23,0.15)] cursor-pointer group">
+            <Play size={16} className="text-[#d4a017] group-hover:scale-110 transition-transform" />
+            <span>Ver Demonstração</span>
+          </button>
+          <p className="text-[#8a8580] text-xs mt-2">Explore o app com dados fictícios, sem criar conta</p>
+        </div>
       </div>
     </div>
   );
