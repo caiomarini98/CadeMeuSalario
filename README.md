@@ -22,6 +22,8 @@ MicroSaaS de finanças pessoais que combina gestão de carteira de investimentos
 
 ## Arquitetura
 
+> [Abrir diagrama interativo (draw.io)](docs/architecture.drawio) — baixe e abra em [app.diagrams.net](https://app.diagrams.net)
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          FRONTEND                                    │

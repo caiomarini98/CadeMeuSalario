@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Download } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line, Legend, PieChart, Pie } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line, PieChart, Pie } from 'recharts';
 import type { Invoice } from '../types';
 import { EXPENSE_CATEGORIES } from '../types';
 import { useInvoiceStore, getMonthlyTotals, getCategoryByMonth, getAllCategories } from '../store/useInvoiceStore';
@@ -54,6 +54,49 @@ function ChartCard({ title, children, dlRef, dlName, extra }: {
       </div>
       {children}
     </div>
+  );
+}
+
+function TrendChart({ trendData, allCats, trendRef }: { trendData: Record<string, string | number>[]; allCats: string[]; trendRef: React.RefObject<HTMLDivElement | null> }) {
+  const [visibleCats, setVisibleCats] = useState<Set<string>>(() => new Set(allCats.slice(0, 3)));
+
+  const toggleCat = (cat: string) => {
+    setVisibleCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) { next.delete(cat); } else { next.add(cat); }
+      return next;
+    });
+  };
+
+  const selectAll = () => setVisibleCats(new Set(allCats));
+  const selectNone = () => setVisibleCats(new Set());
+
+  return (
+    <ChartCard title="Tendência por categoria" dlRef={trendRef} dlName="tendencia">
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button onClick={selectAll} className="px-2 py-1 text-xs rounded-lg border border-[#2a2a2a] text-[#8a8580] hover:border-[#d4a017] hover:text-[#d4a017] transition-colors cursor-pointer">Todas</button>
+        <button onClick={selectNone} className="px-2 py-1 text-xs rounded-lg border border-[#2a2a2a] text-[#8a8580] hover:border-[#d4a017] hover:text-[#d4a017] transition-colors cursor-pointer">Nenhuma</button>
+        {allCats.map((cat, i) => {
+          const color = catColor(cat, i);
+          const active = visibleCats.has(cat);
+          return (
+            <button key={cat} onClick={() => toggleCat(cat)}
+              className={`px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer ${active ? 'border-opacity-60 text-[#f0ece4]' : 'border-[#2a2a2a] text-[#8a8580] opacity-50 hover:opacity-80'}`}
+              style={active ? { borderColor: color, backgroundColor: `${color}20` } : {}}>
+              <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: color }} />
+              {cat}
+            </button>
+          );
+        })}
+      </div>
+      <div className="h-64 sm:h-80" ref={trendRef}><ResponsiveContainer width="100%" height="100%"><LineChart data={trendData}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+        <XAxis dataKey="month" tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
+        <Tooltip contentStyle={ts} labelStyle={{ color: '#f0ece4' }} itemStyle={{ color: '#f0ece4' }} formatter={(v) => fmt(Number(v))} cursor={false} />
+        {allCats.filter((c) => visibleCats.has(c)).map((c) => <Line key={c} type="monotone" dataKey={c} stroke={catColor(c, allCats.indexOf(c))} strokeWidth={2.5} dot={false} />)}
+      </LineChart></ResponsiveContainer></div>
+    </ChartCard>
   );
 }
 
@@ -219,16 +262,7 @@ export function InvoiceCharts({ invoices, selectedInvoiceId }: { invoices: Invoi
 
       {/* Trend lines */}
       {trendData.length > 1 && allCats.length > 0 && (
-        <ChartCard title="Tendência por categoria" dlRef={trendRef} dlName="tendencia">
-          <div className="h-64 sm:h-80" ref={trendRef}><ResponsiveContainer width="100%" height="100%"><LineChart data={trendData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-            <XAxis dataKey="month" tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
-            <Tooltip contentStyle={ts} labelStyle={{ color: '#f0ece4' }} itemStyle={{ color: '#f0ece4' }} formatter={(v) => fmt(Number(v))} cursor={false} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px' }} formatter={(v: string) => <span style={{ color: '#a0998a', fontSize: '12px', marginLeft: '4px' }}>{v}</span>} />
-            {allCats.map((c, i) => <Line key={c} type="monotone" dataKey={c} stroke={catColor(c, i)} strokeWidth={2.5} dot={false} />)}
-          </LineChart></ResponsiveContainer></div>
-        </ChartCard>
+        <TrendChart trendData={trendData} allCats={allCats} trendRef={trendRef} />
       )}
     </div>
   );
