@@ -22,35 +22,9 @@ MicroSaaS de finanças pessoais que combina gestão de carteira de investimentos
 
 ## Arquitetura
 
-> [Abrir diagrama interativo (draw.io)](docs/architecture.drawio) — baixe e abra em [app.diagrams.net](https://app.diagrams.net)
+![Solution Architecture](docs/architecture.png)
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          FRONTEND                                    │
-│  React 18 + TypeScript + Vite + Tailwind + Zustand                  │
-│  Hospedado: Cloudflare Pages (CDN global)                           │
-└─────────────────────────┬───────────────────────────────────────────┘
-                          │ HTTPS
-┌─────────────────────────▼───────────────────────────────────────────┐
-│                      AWS BACKEND                                     │
-│                                                                      │
-│  ┌──────────────┐    ┌──────────────────────────────────────┐       │
-│  │ API Gateway  │───▶│ Lambda Functions (Python 3.13)        │       │
-│  │  (HTTP API)  │    │  • get_upload_url  • process_invoice  │       │
-│  │  + Cognito   │    │  • check_status   • invoice_worker    │       │
-│  │    Auth      │    │  • user_data      • get_config        │       │
-│  └──────────────┘    └───────────────┬──────────────────────┘       │
-│                                      │                               │
-│  ┌────────────┐  ┌─────────┐  ┌─────▼─────┐  ┌─────────────────┐  │
-│  │ S3 Bucket  │  │   SQS   │  │ DynamoDB  │  │ Amazon Bedrock  │  │
-│  │ (uploads)  │  │ + DLQ   │  │(user data)│  │ (Claude Sonnet) │  │
-│  └────────────┘  └─────────┘  └───────────┘  └─────────────────┘  │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │ Amazon Textract (OCR) — apenas para imagens/PDFs escaneados  │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
-```
+> [Abrir diagrama interativo (draw.io)](docs/architecture.drawio) — baixe e abra em [app.diagrams.net](https://app.diagrams.net)
 
 ### Fluxo de Processamento de Faturas
 
