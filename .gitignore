@@ -12,6 +12,12 @@ dist
 # AWS SAM build artifacts
 infra/.aws-sam
 
+# Cloudflare
+.wrangler
+
+# Kiro CLI (internal steering docs)
+.kiro/
+
 # IDE
 .vscode/
 .idea/
