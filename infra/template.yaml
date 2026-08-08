@@ -219,7 +219,7 @@ Resources:
       FunctionName: kdmeusalario-check-status
       CodeUri: lambda/
       Handler: check_status.handler
-      Timeout: 30
+      Timeout: 120
       MemorySize: 512
       Policies:
         - DynamoDBCrudPolicy:
