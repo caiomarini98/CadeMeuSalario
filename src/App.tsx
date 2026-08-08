@@ -1,0 +1,132 @@
+import { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './components/AuthProvider';
+import { LoginPage } from './pages/LoginPage';
+import { Sidebar, type Page } from './components/Sidebar';
+import { HomePage } from './pages/HomePage';
+import { PortfolioPage } from './pages/PortfolioPage';
+import { InvoicesPage } from './pages/InvoicesPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { IncomePage } from './pages/IncomePage';
+import { enableSync, loadFromCloud } from './store/syncMiddleware';
+import { usePortfolioStore } from './store/usePortfolioStore';
+import { useInvoiceStore } from './store/useInvoiceStore';
+import { useFixedIncomeStore } from './store/useFixedIncomeStore';
+import { useGoalsStore } from './store/useGoalsStore';
+import { useIncomeStore, type Income } from './store/useIncomeStore';
+import type { Stock, Invoice, FixedIncome, SavingsGoal } from './types';
+import { Loader2 } from 'lucide-react';
+import { RoleSwitcher } from './components/RoleSwitcher';
+import { OnboardingTour } from './components/OnboardingTour';
+import { useSimStore } from './hooks/useFeatureGate';
+
+function AppContent() {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [page, setPage] = useState<Page>('home');
+  const [syncing, setSyncing] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const simTour = useSimStore((s) => s.simTour);
+
+  const completeTour = () => {
+    setShowTour(false);
+    if (user) localStorage.setItem(`tour-done-${user.sub}`, '1');
+  };
+
+  // Load data from cloud when user logs in
+  useEffect(() => {
+    if (!user) return;
+    enableSync();
+    setSyncing(true);
+    Promise.all([
+      loadFromCloud<{ stocks: Stock[] }>('portfolio'),
+      loadFromCloud<{ invoices: Invoice[] }>('invoices'),
+      loadFromCloud<{ items: FixedIncome[] }>('fixedIncome'),
+      loadFromCloud<{ goals: SavingsGoal[] }>('goals'),
+      loadFromCloud<{ items: Income[] }>('income'),
+    ]).then(([portfolio, invoices, fixedIncome, goals, income]) => {
+      // Load from cloud, or keep local data and push to cloud
+      const localStocks = usePortfolioStore.getState().stocks;
+      const localInvoices = useInvoiceStore.getState().invoices;
+      const localFi = useFixedIncomeStore.getState().items;
+      const localGoals = useGoalsStore.getState().goals;
+
+      if (portfolio?.stocks && portfolio.stocks.length > 0) {
+        usePortfolioStore.getState().setStocks(portfolio.stocks);
+      } else if (localStocks.length > 0) {
+        // Push local data to cloud
+        import('./store/syncMiddleware').then(({ saveToCloud }) => saveToCloud('portfolio', { stocks: localStocks }));
+      }
+
+      if (invoices?.invoices && invoices.invoices.length > 0) {
+        useInvoiceStore.getState().setInvoices(invoices.invoices);
+      } else if (localInvoices.length > 0) {
+        import('./store/syncMiddleware').then(({ saveToCloud }) => saveToCloud('invoices', { invoices: localInvoices }));
+      }
+
+      if (fixedIncome?.items && fixedIncome.items.length > 0) {
+        useFixedIncomeStore.getState().setItems(fixedIncome.items);
+      } else if (localFi.length > 0) {
+        import('./store/syncMiddleware').then(({ saveToCloud }) => saveToCloud('fixedIncome', { items: localFi }));
+      }
+
+      if (goals?.goals && goals.goals.length > 0) {
+        useGoalsStore.getState().setGoals(goals.goals);
+      } else if (localGoals.length > 0) {
+        import('./store/syncMiddleware').then(({ saveToCloud }) => saveToCloud('goals', { goals: localGoals }));
+      }
+
+      const localIncome = useIncomeStore.getState().items;
+      if (income?.items && income.items.length > 0) {
+        useIncomeStore.getState().setItems(income.items);
+      } else if (localIncome.length > 0) {
+        import('./store/syncMiddleware').then(({ saveToCloud }) => saveToCloud('income', { items: localIncome }));
+      }
+
+      usePortfolioStore.getState().refreshQuotes();
+    }).finally(() => {
+      setSyncing(false);
+      if (!localStorage.getItem(`tour-done-${user.sub}`)) setShowTour(true);
+    });
+  }, [user]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-[#d4a017]" />
+      </div>
+    );
+  }
+
+  if (!user) return <LoginPage />;
+
+  if (syncing) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
+        <Loader2 size={32} className="animate-spin text-[#d4a017]" />
+        <p className="text-[#8a8580] text-sm">Carregando seus dados...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <Sidebar currentPage={page} onNavigate={setPage} userName={user.name ?? user.email} onSignOut={signOut} />
+      <main className="md:ml-16 px-4 py-6 pb-24 md:px-8 md:py-8 md:pb-16">
+        {page === 'home' && <HomePage onNavigate={setPage} />}
+        {page === 'portfolio' && <PortfolioPage />}
+        {page === 'invoices' && <InvoicesPage />}
+        {page === 'settings' && <SettingsPage />}
+        {page === 'income' && <IncomePage />}
+      </main>
+      <RoleSwitcher />
+      {(showTour || simTour) && <OnboardingTour onNavigate={setPage} onComplete={simTour ? () => useSimStore.getState().setSimTour(false) : completeTour} />}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}

@@ -1,0 +1,348 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: KDMeuSalario - Finance app with Cognito auth + DynamoDB
+
+Globals:
+  Function:
+    Timeout: 60
+    Runtime: python3.13
+    MemorySize: 256
+    Environment:
+      Variables:
+        BUCKET_NAME: !Ref InvoiceBucket
+        BEDROCK_MODEL_ID: us.anthropic.claude-sonnet-4-5-20250929-v1:0
+        USER_DATA_TABLE: !Ref UserDataTable
+
+Resources:
+  # ==================== AUTH ====================
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: kdmeusalario-users
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: false
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: name
+          Required: false
+          Mutable: true
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+          StringAttributeConstraints:
+            MaxLength: '20'
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: kdmeusalario-web
+      UserPoolId: !Ref UserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # ==================== DATABASE ====================
+  UserDataTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: kdmeusalario-user-data
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: dataType
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: dataType
+          KeyType: RANGE
+
+  # ==================== STORAGE ====================
+  InvoiceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub kdmeusalario-invoices-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [PUT, GET]
+            AllowedOrigins:
+              - !Sub 'https://${WebDistribution.DomainName}'
+            MaxAge: 3600
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldFiles
+            Status: Enabled
+            ExpirationInDays: 30
+
+  # ==================== API ====================
+  InvoiceApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+              audience:
+                - !Ref UserPoolClient
+      CorsConfiguration:
+        AllowOrigins:
+          - !Sub 'https://${WebDistribution.DomainName}'
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+      RouteSettings:
+        "POST /process":
+          ThrottlingBurstLimit: 5
+          ThrottlingRateLimit: 2
+
+  # ==================== USER DATA LAMBDA ====================
+  UserDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-user-data
+      CodeUri: lambda/
+      Handler: user_data.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDataTable
+      Events:
+        GetData:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /user-data/{dataType}
+            Method: GET
+        SaveData:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /user-data/{dataType}
+            Method: PUT
+
+  # ==================== INVOICE LAMBDAS ====================
+  ProcessInvoiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-process-invoice
+      CodeUri: lambda/
+      Handler: process_invoice.handler
+      Timeout: 300
+      MemorySize: 512
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref InvoiceBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDataTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:DetectDocumentText
+                - textract:StartDocumentTextDetection
+                - textract:GetDocumentTextDetection
+                - textract:AnalyzeExpense
+              Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub 'arn:aws:bedrock:*::foundation-model/*anthropic.claude-sonnet-4-5-20250929-v1:0'
+                - !Sub 'arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*anthropic.claude-sonnet-4-5-20250929-v1:0'
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /process
+            Method: POST
+
+  GetUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-get-upload-url
+      CodeUri: lambda/
+      Handler: get_upload_url.handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref InvoiceBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDataTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /upload-url
+            Method: POST
+
+  CheckStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-check-status
+      CodeUri: lambda/
+      Handler: check_status.handler
+      Timeout: 30
+      MemorySize: 512
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDataTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:GetDocumentTextDetection
+              Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub 'arn:aws:bedrock:*::foundation-model/*anthropic.claude-sonnet-4-5-20250929-v1:0'
+                - !Sub 'arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*anthropic.claude-sonnet-4-5-20250929-v1:0'
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /check-status
+            Method: POST
+
+  GetConfigFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-get-config
+      CodeUri: lambda/
+      Handler: get_config.handler
+      Timeout: 10
+      MemorySize: 128
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/kdmeusalario/*
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /config
+            Method: GET
+
+  # ==================== FRONTEND HOSTING ====================
+  WebBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub kdmeusalario-web-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${WebBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: kdmeusalario-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${InvoiceApi}.execute-api.${AWS::Region}.amazonaws.com/prod
+  BucketName:
+    Description: S3 bucket for invoices
+    Value: !Ref InvoiceBucket
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref UserPoolClient
+  WebsiteUrl:
+    Description: CloudFront website URL
+    Value: !Sub https://${WebDistribution.DomainName}
+  WebBucketName:
+    Description: S3 bucket for frontend
+    Value: !Ref WebBucket

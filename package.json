@@ -1,0 +1,34 @@
+{
+  "name": "kdmeusalario",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "sync-env": "echo VITE_API_URL=$(aws cloudformation describe-stacks --stack-name kdmeusalario --region us-east-1 --profile ${AWS_PROFILE:-AWSAdministratorAccess-101134489565} --query \"Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue\" --output text) > .env",
+    "deploy": "sam build --template-file infra/template.yaml --build-dir infra/.aws-sam/build && sam deploy --template-file infra/.aws-sam/build/template.yaml --stack-name kdmeusalario --capabilities CAPABILITY_IAM --resolve-s3 --no-confirm-changeset --region us-east-1 --profile ${AWS_PROFILE:-AWSAdministratorAccess-101134489565} && npm run sync-env && npm run build && echo '✔ Deploy completo. Rode npm run dev para acessar.'",
+    "destroy": "aws s3 rm s3://kdmeusalario-invoices-$(aws sts get-caller-identity --profile ${AWS_PROFILE:-AWSAdministratorAccess-101134489565} --query Account --output text) --recursive --profile ${AWS_PROFILE:-AWSAdministratorAccess-101134489565} --region us-east-1 && sam delete --stack-name kdmeusalario --no-prompts --profile ${AWS_PROFILE:-AWSAdministratorAccess-101134489565} --region us-east-1"
+  },
+  "dependencies": {
+    "amazon-cognito-identity-js": "^6.3.16",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "recharts": "^3.8.1",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/file-saver": "^2.0.7",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.5"
+  }
+}

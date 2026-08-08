@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --color-emerald-950: #022c22;
+  --color-red-950: #450a0a;
+}
+
+:root {
+  /* FinFlow Design Tokens — Dark Theme */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1a1a1a;
+  --surface: #141414;
+  --surface-hover: #1f1f1f;
+  --border: #2a2a2a;
+  --border-light: #1a1a1a;
+
+  --text-primary: #f0ece4;
+  --text-secondary: #a0998a;
+  --text-tertiary: #6a6560;
+
+  --accent: #e8b420;
+  --accent-hover: #d4a017;
+  --accent-light: rgba(232, 180, 32, 0.12);
+
+  --success: #2d9d4e;
+  --warning: #e6a817;
+  --danger: #d93636;
+
+  --sidebar-bg: #050505;
+
+  /* Category Colors */
+  --cat-moradia: #d93636;
+  --cat-alimentacao: #e08a1e;
+  --cat-transporte: #d4a017;
+  --cat-lazer: #8a6bbf;
+  --cat-saude: #2d9d4e;
+  --cat-educacao: #06b6d4;
+  --cat-assinaturas: #a855f7;
+  --cat-compras: #10b981;
+  --cat-servicos: #f97316;
+  --cat-outros: #6366f1;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Custom scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Mobile safe area for bottom nav */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}

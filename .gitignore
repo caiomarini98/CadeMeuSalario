@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Environment variables (secrets)
+.env
+.env.local
+.env.*.local
+
+# AWS SAM build artifacts
+infra/.aws-sam
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
