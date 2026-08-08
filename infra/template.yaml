@@ -306,6 +306,31 @@ Resources:
             Path: /config
             Method: GET
 
+  DemoInvoiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-demo-invoice
+      CodeUri: lambda/
+      Handler: demo_invoice.handler
+      Timeout: 30
+      MemorySize: 256
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref InvoiceBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDataTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt InvoiceQueue.QueueName
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /demo/invoice
+            Method: POST
+            Auth:
+              Authorizer: NONE
+
   # ==================== FRONTEND HOSTING ====================
   WebBucket:
     Type: AWS::S3::Bucket

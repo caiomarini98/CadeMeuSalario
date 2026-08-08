@@ -10,6 +10,15 @@ async function computeFileHash(file: File): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+function getDemoSessionId(): string {
+  let id = sessionStorage.getItem('kdms-demo-session');
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem('kdms-demo-session', id);
+  }
+  return id;
+}
+
 async function authHeaders(): Promise<Record<string, string>> {
   const token = await getIdToken();
   return {
@@ -116,4 +125,66 @@ export async function processInvoice(file: File): Promise<Omit<Invoice, 'id' | '
   if (!referenceMonth) referenceMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   return { fileName: file.name, uploadDate: now.toISOString(), referenceMonth, totalAmount, expensesTotal, expenses };
+}
+
+export async function processDemoInvoice(file: File): Promise<Omit<Invoice, 'id' | 'status'>> {
+  const sessionId = getDemoSessionId();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Demo-Session': sessionId,
+  };
+
+  // Step 1: Get upload URL
+  const urlRes = await fetch(`${API_URL}/demo/invoice`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ action: 'upload-url', filename: file.name, contentType: file.type || 'application/pdf', fileSize: file.size }),
+  });
+  if (urlRes.status === 429) {
+    const data = await urlRes.json();
+    throw new Error(data.error || 'Limite do demo atingido. Crie uma conta para processar mais.');
+  }
+  if (!urlRes.ok) throw new Error(`Erro: ${urlRes.status}`);
+  const { uploadUrl, key } = await urlRes.json() as { uploadUrl: string; key: string };
+
+  // Step 2: Upload to S3
+  const upRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/pdf' }, body: file });
+  if (!upRes.ok) throw new Error('Erro no upload');
+
+  // Step 3: Start processing
+  const procRes = await fetch(`${API_URL}/demo/invoice`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ action: 'process', key }),
+  });
+  if (procRes.status === 429) {
+    const data = await procRes.json();
+    throw new Error(data.error || 'Limite do demo atingido.');
+  }
+  if (!procRes.ok) throw new Error(`Erro ao processar: ${procRes.status}`);
+
+  // Step 4: Poll for result
+  let expenses: { category: string; description: string; amount: number; date?: string }[] = [];
+  let totalAmount = 0;
+  let referenceMonth = '';
+
+  for (let i = 0; i < 90; i++) {
+    await sleep(3000);
+    const statusRes = await fetch(`${API_URL}/demo/invoice`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ action: 'check-status', key }),
+    });
+    if (!statusRes.ok) continue;
+    const s = await statusRes.json() as { status: string; expenses?: typeof expenses; totalAmount?: number; referenceMonth?: string; error?: string };
+    if (s.status === 'done') {
+      expenses = s.expenses ?? [];
+      totalAmount = s.totalAmount ?? 0;
+      referenceMonth = s.referenceMonth ?? '';
+      break;
+    }
+    if (s.status === 'error') throw new Error(s.error ?? 'Erro no processamento');
+  }
+
+  const now = new Date();
+  if (!referenceMonth) referenceMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  return { fileName: file.name, uploadDate: now.toISOString(), referenceMonth, totalAmount, expenses };
 }

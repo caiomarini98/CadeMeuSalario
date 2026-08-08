@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { FileText, Trash2, Loader2, AlertCircle, Download, CloudUpload, Pencil, Check, CreditCard } from 'lucide-react';
 import { useInvoiceStore } from '../store/useInvoiceStore';
-import { processInvoice } from '../services/invoiceService';
+import { processInvoice, processDemoInvoice } from '../services/invoiceService';
 import { InvoiceCharts } from '../components/InvoiceCharts';
 import { exportInvoicesToExcel, exportSingleInvoiceToExcel } from '../services/exportService';
+import { useAuth } from '../components/AuthProvider';
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -92,6 +93,7 @@ function CardEditor({ invoiceId, currentCard, existingCards }: { invoiceId: stri
 
 export function InvoicesPage() {
   const { invoices, addInvoice, updateInvoice, removeInvoice } = useInvoiceStore();
+  const { isDemo } = useAuth();
   const [selId, setSelId] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
   const [periodFilter, setPeriodFilter] = useState<string>('all');
@@ -103,7 +105,7 @@ export function InvoicesPage() {
     for (const file of Array.from(files)) {
       const id = crypto.randomUUID();
       addInvoice({ id, fileName: file.name, uploadDate: new Date().toISOString(), referenceMonth: '', totalAmount: 0, expenses: [], status: 'processing' });
-      try { const r = await processInvoice(file); updateInvoice(id, { ...r, status: 'done' }); }
+      try { const r = await (isDemo ? processDemoInvoice(file) : processInvoice(file)); updateInvoice(id, { ...r, status: 'done' }); }
       catch (e) { updateInvoice(id, { status: 'error', errorMessage: e instanceof Error ? e.message : 'Erro' }); }
     }
   };
