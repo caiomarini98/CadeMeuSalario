@@ -5,10 +5,24 @@ import boto3
 from rate_limit import get_user_id, get_user_plan, check_rate_limit
 
 s3 = boto3.client('s3')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table(os.environ.get('USER_DATA_TABLE', 'kdmeusalario-user-data'))
 BUCKET = os.environ['BUCKET_NAME']
 
 ALLOWED_TYPES = {'application/pdf', 'image/jpeg', 'image/png', 'image/webp'}
 MAX_SIZE_MB = 10
+
+
+def check_duplicate(user_id, file_hash):
+    """Check if a file with this hash was already processed for this user."""
+    if not file_hash:
+        return False
+    try:
+        resp = table.get_item(Key={'userId': user_id, 'dataType': f'file-hash#{file_hash}'})
+        item = resp.get('Item')
+        return item is not None
+    except Exception:
+        return False
 
 
 def handler(event, context):
@@ -36,6 +50,17 @@ def handler(event, context):
         filename = body.get('filename', 'invoice.pdf')
         content_type = body.get('contentType', 'application/pdf')
         file_size = body.get('fileSize', 0)
+        file_hash = body.get('fileHash', '')
+
+        # Check for duplicate file
+        if file_hash and check_duplicate(user_id, file_hash):
+            return {
+                'statusCode': 409,
+                'body': json.dumps({
+                    'error': 'Esta fatura já foi processada anteriormente. Exclua a existente para reprocessar.',
+                    'code': 'DUPLICATE_FILE',
+                }),
+            }
 
         # Validate content type
         if content_type not in ALLOWED_TYPES:
@@ -74,6 +99,7 @@ def handler(event, context):
             'body': json.dumps({
                 'uploadUrl': url,
                 'key': key,
+                'fileHash': file_hash,
                 'remaining': remaining - 1,
                 'limit': limit,
             }),

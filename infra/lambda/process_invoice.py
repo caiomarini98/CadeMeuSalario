@@ -28,6 +28,7 @@ def handler(event, context):
 
         body = json.loads(event.get('body', '{}'))
         key = body.get('key', '')
+        file_hash = body.get('fileHash', '')
 
         if not key:
             return {'statusCode': 400, 'body': json.dumps({'error': 'Missing key parameter'})}
@@ -44,6 +45,7 @@ def handler(event, context):
             'MessageBody': json.dumps({
                 'userId': user_id,
                 'key': key,
+                'fileHash': file_hash,
             }),
         }
         if QUEUE_URL.endswith('.fifo'):

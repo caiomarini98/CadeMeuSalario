@@ -3,6 +3,13 @@ import { getIdToken } from './authService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+async function computeFileHash(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function authHeaders(): Promise<Record<string, string>> {
   const token = await getIdToken();
   return {
@@ -11,14 +18,18 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
-async function getUploadUrl(filename: string, contentType: string, fileSize: number) {
+async function getUploadUrl(filename: string, contentType: string, fileSize: number, fileHash: string) {
   const res = await fetch(`${API_URL}/upload-url`, {
     method: 'POST', headers: await authHeaders(),
-    body: JSON.stringify({ filename, contentType, fileSize }),
+    body: JSON.stringify({ filename, contentType, fileSize, fileHash }),
   });
   if (res.status === 429) {
     const data = await res.json();
     throw new Error(data.error || 'Limite mensal de faturas excedido.');
+  }
+  if (res.status === 409) {
+    const data = await res.json();
+    throw new Error(data.error || 'Esta fatura já foi processada anteriormente.');
   }
   if (!res.ok) throw new Error(`Erro ao gerar URL de upload: ${res.status}`);
   return res.json() as Promise<{ uploadUrl: string; key: string; remaining: number; limit: number }>;
@@ -29,10 +40,10 @@ async function uploadToS3(url: string, file: File) {
   if (!res.ok) throw new Error('Erro no upload');
 }
 
-async function startProcessing(key: string) {
+async function startProcessing(key: string, fileHash: string) {
   const res = await fetch(`${API_URL}/process`, {
     method: 'POST', headers: await authHeaders(),
-    body: JSON.stringify({ key }),
+    body: JSON.stringify({ key, fileHash }),
   });
   if (res.status === 429) {
     const data = await res.json();
@@ -62,9 +73,10 @@ async function checkStatus(params: { jobId?: string; key?: string }) {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function processInvoice(file: File): Promise<Omit<Invoice, 'id' | 'status'>> {
-  const { uploadUrl, key } = await getUploadUrl(file.name, file.type || 'application/pdf', file.size);
+  const fileHash = await computeFileHash(file);
+  const { uploadUrl, key } = await getUploadUrl(file.name, file.type || 'application/pdf', file.size, fileHash);
   await uploadToS3(uploadUrl, file);
-  const start = await startProcessing(key);
+  const start = await startProcessing(key, fileHash);
 
   let expenses: { category: string; description: string; amount: number; date?: string }[] = [];
   let totalAmount = 0;

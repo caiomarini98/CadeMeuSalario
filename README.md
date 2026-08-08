@@ -184,6 +184,8 @@ sam deploy --template-file infra/.aws-sam/build/template.yaml \
 ## Decisões Técnicas
 
 - **SQS + DLQ** em vez de processamento síncrono — resiliência contra burst de uploads e timeout do Bedrock
+- **pypdf + fallback Textract** — extração de texto grátis para PDFs textuais, Textract apenas para escaneados (reduz custo em ~80%)
+- **Hash SHA-256 de deduplicação** — evita reprocessamento de faturas idênticas, economizando Textract + Bedrock
 - **Cloudflare Pages** em vez de S3+CloudFront — deploy mais rápido, CDN global, zero config de invalidação
 - **Zustand** em vez de Redux — simplicidade para app single-user, persist middleware nativo
 - **Cognito custom:role + custom:plan** — controle de acesso e billing sem banco relacional
