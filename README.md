@@ -1,8 +1,8 @@
-# 💰 Cadê Meu Salário
+# Cadê Meu Salário
 
 > Personal Finance App — Gestão de carteira de investimentos + análise inteligente de faturas com IA.
 
-**[🚀 Live Demo](https://kdmeusalario.pages.dev)** — Explore com dados fictícios, sem criar conta.
+**[Live Demo](https://kdmeusalario.pages.dev)** — Explore com dados fictícios, sem criar conta.
 
 ---
 
@@ -12,11 +12,11 @@ MicroSaaS de finanças pessoais que combina gestão de carteira de investimentos
 
 ### Funcionalidades
 
-- **📊 Carteira de Investimentos** — Acompanhamento de ações (cotações em tempo real via Brapi), renda fixa, gráficos de evolução e distribuição
-- **🧾 Análise de Faturas** — Upload de PDF/imagem → OCR → categorização automática via LLM
-- **📈 Dashboard** — Resumo visual de patrimônio, gastos por categoria, tendências mensais
-- **📤 Exportação** — Relatórios em Excel (carteira e faturas)
-- **🎯 Modo Demo** — Visualização completa com dados mockados para visitantes
+- **Carteira de Investimentos** — Acompanhamento de ações (cotações em tempo real via Brapi), renda fixa, gráficos de evolução e distribuição
+- **Análise de Faturas** — Upload de PDF/imagem → OCR → categorização automática via LLM
+- **Dashboard** — Resumo visual de patrimônio, gastos por categoria, tendências mensais
+- **Exportação** — Relatórios em Excel (carteira e faturas)
+- **Modo Demo** — Visualização completa com dados mockados para visitantes
 
 ---
 
@@ -101,7 +101,7 @@ Upload PDF → S3 → API Gateway → Lambda (validate + rate limit)
 | Amazon Textract | OCR de documentos |
 | Amazon Bedrock (Claude Sonnet 4.5) | Categorização por IA |
 
-### Infra & CI/CD
+### Infra e CI/CD
 | Ferramenta | Uso |
 |-----------|-----|
 | AWS SAM | IaC (Infrastructure as Code) |
@@ -193,7 +193,7 @@ sam deploy --template-file infra/.aws-sam/build/template.yaml \
 
 ## Autor
 
-**Caio Marini** — Full-Stack Developer & Cloud Architect
+**Caio Marini** — Cloud Architect & Data Engineer (AWS)
 
-- [LinkedIn](https://linkedin.com/in/caiomarini)
+- [LinkedIn](https://www.linkedin.com/in/caio-marini/)
 - [GitHub](https://github.com/caiomarini98)
