@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: KDMeuSalario - Finance app with Cognito auth + DynamoDB
+Description: KDMeuSalario - Finance app with Cognito auth + DynamoDB + SQS
 
 Globals:
   Function:
@@ -12,6 +12,7 @@ Globals:
         BUCKET_NAME: !Ref InvoiceBucket
         BEDROCK_MODEL_ID: us.anthropic.claude-sonnet-4-5-20250929-v1:0
         USER_DATA_TABLE: !Ref UserDataTable
+        INVOICE_QUEUE_URL: !Ref InvoiceQueue
 
 Resources:
   # ==================== AUTH ====================
@@ -80,6 +81,23 @@ Resources:
         - AttributeName: dataType
           KeyType: RANGE
 
+  # ==================== SQS ====================
+  InvoiceDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: kdmeusalario-invoice-dlq
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  InvoiceQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: kdmeusalario-invoice-queue
+      VisibilityTimeout: 600  # 10 min (must be > worker Lambda timeout)
+      MessageRetentionPeriod: 86400  # 1 day
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt InvoiceDLQ.Arn
+        maxReceiveCount: 3  # 3 tentativas antes de ir pra DLQ
+
   # ==================== STORAGE ====================
   InvoiceBucket:
     Type: AWS::S3::Bucket
@@ -95,6 +113,7 @@ Resources:
             AllowedMethods: [PUT, GET]
             AllowedOrigins:
               - !Sub 'https://${WebDistribution.DomainName}'
+              - 'https://kdmeusalario.pages.dev'
             MaxAge: 3600
       LifecycleConfiguration:
         Rules:
@@ -164,8 +183,30 @@ Resources:
       FunctionName: kdmeusalario-process-invoice
       CodeUri: lambda/
       Handler: process_invoice.handler
+      Timeout: 30
+      MemorySize: 256
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDataTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt InvoiceQueue.QueueName
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /process
+            Method: POST
+
+  InvoiceWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-invoice-worker
+      CodeUri: lambda/
+      Handler: invoice_worker.handler
       Timeout: 300
       MemorySize: 512
+      ReservedConcurrentExecutions: 2
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref InvoiceBucket
@@ -187,12 +228,11 @@ Resources:
                 - !Sub 'arn:aws:bedrock:*::foundation-model/*anthropic.claude-sonnet-4-5-20250929-v1:0'
                 - !Sub 'arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*anthropic.claude-sonnet-4-5-20250929-v1:0'
       Events:
-        Api:
-          Type: HttpApi
+        SQSEvent:
+          Type: SQS
           Properties:
-            ApiId: !Ref InvoiceApi
-            Path: /process
-            Method: POST
+            Queue: !GetAtt InvoiceQueue.Arn
+            BatchSize: 1
 
   GetUploadUrlFunction:
     Type: AWS::Serverless::Function
@@ -347,3 +387,9 @@ Outputs:
   WebBucketName:
     Description: S3 bucket for frontend
     Value: !Ref WebBucket
+  InvoiceQueueUrl:
+    Description: SQS Queue URL for invoice processing
+    Value: !Ref InvoiceQueue
+  InvoiceDLQUrl:
+    Description: Dead Letter Queue URL
+    Value: !Ref InvoiceDLQ

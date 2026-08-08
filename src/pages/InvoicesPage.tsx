@@ -226,6 +226,8 @@ export function InvoicesPage() {
                 <div className="flex items-center gap-1 sm:gap-2 mt-0.5 flex-wrap">
                   {inv.status === 'done'
                     ? <><MonthEditor invoiceId={inv.id} currentMonth={inv.referenceMonth} /><CardEditor invoiceId={inv.id} currentCard={inv.cardName} existingCards={cards} /></>
+                    : inv.status === 'error'
+                    ? <span className="text-[#d93636] text-sm sm:text-sm">{inv.errorMessage || 'Erro no processamento'}</span>
                     : <span className="text-[#8a8580] text-sm sm:text-sm">Processando...</span>
                   }
                   {inv.status === 'done' && <span className="text-[#8a8580] text-sm sm:text-sm hidden sm:inline">· {inv.expenses.length} itens</span>}

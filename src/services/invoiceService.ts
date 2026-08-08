@@ -16,8 +16,12 @@ async function getUploadUrl(filename: string, contentType: string, fileSize: num
     method: 'POST', headers: await authHeaders(),
     body: JSON.stringify({ filename, contentType, fileSize }),
   });
+  if (res.status === 429) {
+    const data = await res.json();
+    throw new Error(data.error || 'Limite mensal de faturas excedido.');
+  }
   if (!res.ok) throw new Error(`Erro ao gerar URL de upload: ${res.status}`);
-  return res.json() as Promise<{ uploadUrl: string; key: string }>;
+  return res.json() as Promise<{ uploadUrl: string; key: string; remaining: number; limit: number }>;
 }
 
 async function uploadToS3(url: string, file: File) {
@@ -30,18 +34,22 @@ async function startProcessing(key: string) {
     method: 'POST', headers: await authHeaders(),
     body: JSON.stringify({ key }),
   });
+  if (res.status === 429) {
+    const data = await res.json();
+    throw new Error(data.error || 'Limite mensal de faturas excedido.');
+  }
   if (!res.ok) throw new Error(`Erro ao processar: ${res.status}`);
   return res.json() as Promise<{
-    status: string; jobId?: string; key?: string;
+    status: string; jobId?: string; key?: string; remaining?: number;
     expenses?: { category: string; description: string; amount: number; date?: string }[];
     totalAmount?: number; expensesTotal?: number; referenceMonth?: string;
   }>;
 }
 
-async function checkStatus(jobId: string) {
+async function checkStatus(params: { jobId?: string; key?: string }) {
   const res = await fetch(`${API_URL}/check-status`, {
     method: 'POST', headers: await authHeaders(),
-    body: JSON.stringify({ jobId }),
+    body: JSON.stringify(params),
   });
   if (!res.ok) throw new Error(`Erro ao verificar: ${res.status}`);
   return res.json() as Promise<{
@@ -68,12 +76,13 @@ export async function processInvoice(file: File): Promise<Omit<Invoice, 'id' | '
     totalAmount = start.totalAmount ?? 0;
     expensesTotal = start.expensesTotal;
     referenceMonth = start.referenceMonth ?? '';
-  } else if (start.status === 'processing' && start.jobId) {
-    const jobId = start.jobId;
+  } else if (start.status === 'queued' || start.status === 'processing') {
+    // Poll using key (new SQS flow) or jobId (legacy)
+    const pollParams = start.key ? { key: start.key } : { jobId: start.jobId };
     let found = false;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 90; i++) {
       await sleep(3000);
-      const s = await checkStatus(jobId);
+      const s = await checkStatus(pollParams);
       if (s.status === 'done') {
         expenses = s.expenses ?? [];
         totalAmount = s.totalAmount ?? 0;

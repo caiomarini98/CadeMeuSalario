@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 import boto3
-from rate_limit import get_user_id
+from rate_limit import get_user_id, get_user_plan, check_rate_limit
 
 s3 = boto3.client('s3')
 BUCKET = os.environ['BUCKET_NAME']
@@ -17,6 +17,21 @@ def handler(event, context):
         if not user_id:
             return {'statusCode': 401, 'body': json.dumps({'error': 'Unauthorized'})}
 
+        # Check rate limit BEFORE generating upload URL
+        plan = get_user_plan(event)
+        allowed, remaining, limit = check_rate_limit(user_id, plan)
+        if not allowed:
+            plan_label = 'Premium' if plan == 'free' else 'um plano superior'
+            return {
+                'statusCode': 429,
+                'body': json.dumps({
+                    'error': f'Limite mensal atingido ({limit} faturas). Faça upgrade para {plan_label} para processar mais.',
+                    'code': 'RATE_LIMIT_EXCEEDED',
+                    'limit': limit,
+                    'plan': plan,
+                }),
+            }
+
         body = json.loads(event.get('body', '{}'))
         filename = body.get('filename', 'invoice.pdf')
         content_type = body.get('contentType', 'application/pdf')
@@ -26,7 +41,7 @@ def handler(event, context):
         if content_type not in ALLOWED_TYPES:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': f'Tipo de arquivo não permitido. Aceitos: PDF, JPEG, PNG, WebP'}),
+                'body': json.dumps({'error': 'Tipo de arquivo não permitido. Aceitos: PDF, JPEG, PNG, WebP'}),
             }
 
         # Validate file size
@@ -54,7 +69,15 @@ def handler(event, context):
 
         url = s3.generate_presigned_url('put_object', Params=params, ExpiresIn=300)
 
-        return {'statusCode': 200, 'body': json.dumps({'uploadUrl': url, 'key': key})}
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'uploadUrl': url,
+                'key': key,
+                'remaining': remaining - 1,
+                'limit': limit,
+            }),
+        }
 
     except Exception as e:
         print(f"Error: {e}")

@@ -31,10 +31,10 @@ def get_textract_text(job_id):
     return '\n'.join(lines)
 
 
-def get_cached_result(user_id, job_id):
-    """Check if we already have a cached result for this job."""
+def get_cached_result(user_id, lookup_key):
+    """Check if we have a cached result (by jobId or S3 key)."""
     try:
-        resp = table.get_item(Key={'userId': user_id, 'dataType': f'invoice-result#{job_id}'})
+        resp = table.get_item(Key={'userId': user_id, 'dataType': f'invoice-result#{lookup_key}'})
         item = resp.get('Item')
         if item and item.get('status') == 'done':
             return {
@@ -44,6 +44,33 @@ def get_cached_result(user_id, job_id):
                 'referenceMonth': item.get('referenceMonth', ''),
             }
         if item and item.get('status') == 'categorizing':
+            return {'status': 'processing'}
+    except Exception:
+        pass
+    return None
+
+
+def get_job_status(user_id, key):
+    """Check processing status by S3 key (new SQS flow)."""
+    try:
+        resp = table.get_item(Key={'userId': user_id, 'dataType': f'invoice-job#{key}'})
+        item = resp.get('Item')
+        if not item:
+            return None
+
+        status = item.get('status', '')
+        if status == 'done':
+            result = json.loads(item.get('result', '{}'))
+            return {
+                'status': 'done',
+                'expenses': result.get('expenses', []),
+                'totalAmount': result.get('totalAmount', 0),
+                'referenceMonth': result.get('referenceMonth', ''),
+            }
+        if status == 'error':
+            result = json.loads(item.get('result', '{}'))
+            return {'status': 'error', 'error': result.get('error', 'Processing failed')}
+        if status == 'processing':
             return {'status': 'processing'}
     except Exception:
         pass
@@ -62,7 +89,7 @@ def save_result(user_id, job_id, categorized):
             'referenceMonth': categorized.get('referenceMonth', ''),
         })
     except Exception as e:
-        print(f"Error saving result to DynamoDB: {e}")
+        print(f"Error saving result: {e}")
 
 
 def mark_categorizing(user_id, job_id):
@@ -85,13 +112,20 @@ def handler(event, context):
 
         body = json.loads(event.get('body', '{}'))
         job_id = body.get('jobId', '')
+        key = body.get('key', '')
 
-        if not job_id:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'Missing jobId'}),
-            }
+        if not job_id and not key:
+            return {'statusCode': 400, 'body': json.dumps({'error': 'Missing jobId or key'})}
 
+        # New flow: check by S3 key
+        if key:
+            result = get_job_status(user_id, key)
+            if result:
+                return {'statusCode': 200, 'body': json.dumps(result)}
+            # Not found yet — still queued
+            return {'statusCode': 200, 'body': json.dumps({'status': 'processing'})}
+
+        # Legacy flow: check by Textract jobId
         # Check cache first
         cached = get_cached_result(user_id, job_id)
         if cached:
@@ -102,10 +136,7 @@ def handler(event, context):
         status = result['JobStatus']
 
         if status == 'IN_PROGRESS':
-            return {
-                'statusCode': 200,
-                'body': json.dumps({'status': 'processing'}),
-            }
+            return {'statusCode': 200, 'body': json.dumps({'status': 'processing'})}
 
         if status == 'FAILED':
             return {
@@ -116,26 +147,16 @@ def handler(event, context):
                 }),
             }
 
-        # SUCCEEDED — extract text and categorize
+        # SUCCEEDED
         text = get_textract_text(job_id)
 
         if not text.strip():
-            empty_result = {
-                'status': 'done',
-                'expenses': [],
-                'totalAmount': 0,
-                'referenceMonth': '',
-            }
+            empty_result = {'status': 'done', 'expenses': [], 'totalAmount': 0, 'referenceMonth': ''}
             save_result(user_id, job_id, empty_result)
             return {'statusCode': 200, 'body': json.dumps(empty_result)}
 
-        # Mark as categorizing so next poll knows we're working on it
         mark_categorizing(user_id, job_id)
-
-        # Call Bedrock for categorization
         categorized = categorize_expenses(text)
-
-        # Cache the result
         save_result(user_id, job_id, categorized)
 
         return {
@@ -150,7 +171,4 @@ def handler(event, context):
 
     except Exception as e:
         print(f"Error: {e}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': 'Internal server error'}),
-        }
+        return {'statusCode': 500, 'body': json.dumps({'error': 'Internal server error'})}
