@@ -119,6 +119,7 @@ Resources:
       CorsConfiguration:
         AllowOrigins:
           - !Sub 'https://${WebDistribution.DomainName}'
+          - 'https://kdmeusalario.pages.dev'
         AllowHeaders:
           - '*'
         AllowMethods:
