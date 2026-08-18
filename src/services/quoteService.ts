@@ -44,7 +44,8 @@ export async function fetchQuotes(tickers: string[]): Promise<Map<string, StockQ
   if (tickers.length === 0) return new Map();
   const token = await resolveToken();
   if (!token) {
-    throw new Error('Token da Brapi necessário. Configure em Configurações.');
+    // No token available (demo mode or not configured) — return empty silently
+    return new Map();
   }
   const quotes = new Map<string, StockQuote>();
   const results = await Promise.allSettled(
@@ -76,7 +77,7 @@ export async function fetchQuotes(tickers: string[]): Promise<Map<string, StockQ
 export async function searchStock(ticker: string, range = '1mo', interval = '1d'): Promise<StockSearchResult | null> {
   const upper = ticker.toUpperCase().trim();
   const token = await resolveToken();
-  if (!token) throw new Error('Token da Brapi necessário. Configure em Configurações.');
+  if (!token) return null;
   const url = new URL(`${BASE_URL}/quote/${upper}`);
   url.searchParams.set('range', range);
   url.searchParams.set('interval', interval);
