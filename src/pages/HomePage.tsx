@@ -3,6 +3,7 @@ import { Wallet, ArrowUpRight, ArrowDownRight, BarChart3, Landmark, PiggyBank } 
 import { usePortfolioStore } from '../store/usePortfolioStore';
 import { useFixedIncomeStore } from '../store/useFixedIncomeStore';
 import { useGoalsStore } from '../store/useGoalsStore';
+import { RetirementPlanner } from '../components/RetirementPlanner';
 import { useInvoiceStore } from '../store/useInvoiceStore';
 import { CategoryIcon } from '../components/CategoryIcon';
 import type { Page } from '../components/Sidebar';
@@ -147,6 +148,9 @@ export function HomePage({ onNavigate }: { onNavigate: (p: Page) => void }) {
           </button>
         </div>
       )}
+
+      {/* Retirement Planner */}
+      <RetirementPlanner />
     </div>
   );
 }

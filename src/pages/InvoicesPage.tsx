@@ -4,6 +4,7 @@ import { useInvoiceStore } from '../store/useInvoiceStore';
 import { processInvoice, processDemoInvoice } from '../services/invoiceService';
 import { InvoiceCharts } from '../components/InvoiceCharts';
 import { CategoryAlerts } from '../components/CategoryAlerts';
+import { MonthlyReport } from '../components/MonthlyReport';
 import { exportInvoicesToExcel, exportSingleInvoiceToExcel } from '../services/exportService';
 import { useAuth } from '../components/AuthProvider';
 import { useFeatureGate } from '../hooks/useFeatureGate';
@@ -270,6 +271,7 @@ export function InvoicesPage() {
 
       <div data-tour="invoice-charts">
         <CategoryAlerts />
+        <MonthlyReport />
         <InvoiceCharts invoices={filteredInvoices} selectedInvoiceId={selId} />
       </div>
     </div>
