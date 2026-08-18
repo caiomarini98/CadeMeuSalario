@@ -3,6 +3,7 @@ import { FileText, Trash2, Loader2, AlertCircle, Download, CloudUpload, Pencil, 
 import { useInvoiceStore } from '../store/useInvoiceStore';
 import { processInvoice, processDemoInvoice } from '../services/invoiceService';
 import { InvoiceCharts } from '../components/InvoiceCharts';
+import { CategoryAlerts } from '../components/CategoryAlerts';
 import { exportInvoicesToExcel, exportSingleInvoiceToExcel } from '../services/exportService';
 import { useAuth } from '../components/AuthProvider';
 import { useFeatureGate } from '../hooks/useFeatureGate';
@@ -268,6 +269,7 @@ export function InvoicesPage() {
       )}
 
       <div data-tour="invoice-charts">
+        <CategoryAlerts />
         <InvoiceCharts invoices={filteredInvoices} selectedInvoiceId={selId} />
       </div>
     </div>
