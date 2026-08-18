@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './components/AuthProvider';
 import { DEMO_STOCKS, DEMO_FIXED_INCOME, DEMO_INVOICES } from './data/demoData';
 import { exchangeCodeForTokens } from './services/authService';
 import { LoginPage } from './pages/LoginPage';
+import { LandingPage } from './pages/LandingPage';
 import { Sidebar, type Page } from './components/Sidebar';
 import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
@@ -117,7 +118,11 @@ function AppContent() {
     );
   }
 
-  if (!user) return <LoginPage />;
+  if (!user) {
+    // Show login page if navigated to /app, otherwise show landing page
+    if (window.location.pathname === '/app') return <LoginPage />;
+    return <LandingPage />;
+  }
 
   if (syncing) {
     return (
