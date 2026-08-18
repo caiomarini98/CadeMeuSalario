@@ -138,6 +138,8 @@ Resources:
             AllowedOrigins:
               - !Sub 'https://${WebDistribution.DomainName}'
               - 'https://kdmeusalario.pages.dev'
+              - 'https://cademeusalario.com.br'
+              - 'https://www.cademeusalario.com.br'
             MaxAge: 3600
       LifecycleConfiguration:
         Rules:
@@ -163,6 +165,8 @@ Resources:
         AllowOrigins:
           - !Sub 'https://${WebDistribution.DomainName}'
           - 'https://kdmeusalario.pages.dev'
+          - 'https://cademeusalario.com.br'
+          - 'https://www.cademeusalario.com.br'
         AllowHeaders:
           - '*'
         AllowMethods:

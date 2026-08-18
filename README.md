@@ -2,7 +2,7 @@
 
 > Personal Finance App — Gestão de carteira de investimentos + análise inteligente de faturas com IA.
 
-**[Live Demo](https://kdmeusalario.pages.dev)** — Explore com dados fictícios, sem criar conta.
+**[Live Demo](https://cademeusalario.com.br)** — Explore com dados fictícios, sem criar conta.
 
 ---
 
