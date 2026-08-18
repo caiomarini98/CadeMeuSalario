@@ -5,8 +5,8 @@ export type Page = 'home' | 'portfolio' | 'invoices' | 'income';
 
 const navItems: { page: Page; label: string; icon: typeof Home }[] = [
   { page: 'home', label: 'Home', icon: Home },
-  { page: 'portfolio', label: 'Carteira', icon: Briefcase },
   { page: 'invoices', label: 'Faturas', icon: Receipt },
+  { page: 'portfolio', label: 'Carteira', icon: Briefcase },
 ];
 
 export function Sidebar({ currentPage, onNavigate, userName, onSignOut }: {

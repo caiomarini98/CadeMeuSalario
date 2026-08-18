@@ -5,6 +5,7 @@ import { processInvoice, processDemoInvoice } from '../services/invoiceService';
 import { InvoiceCharts } from '../components/InvoiceCharts';
 import { exportInvoicesToExcel, exportSingleInvoiceToExcel } from '../services/exportService';
 import { useAuth } from '../components/AuthProvider';
+import { useFeatureGate } from '../hooks/useFeatureGate';
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -94,6 +95,8 @@ function CardEditor({ invoiceId, currentCard, existingCards }: { invoiceId: stri
 export function InvoicesPage() {
   const { invoices, addInvoice, updateInvoice, removeInvoice } = useInvoiceStore();
   const { isDemo } = useAuth();
+  const { hasAccess } = useFeatureGate();
+  const canExport = hasAccess('export');
   const [selId, setSelId] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
   const [periodFilter, setPeriodFilter] = useState<string>('all');
@@ -137,9 +140,9 @@ export function InvoicesPage() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           {done.length > 0 && (
-            <button onClick={() => void exportInvoicesToExcel(filteredDone.length > 0 ? filteredDone : done)}
-              className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-sm font-medium text-[#a0998a] hover:text-[#2d9d4e] bg-[#141414] hover:bg-[rgba(45,157,78,0.1)] border border-[#2a2a2a] hover:border-[#2d9d4e]/30 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 transition-all cursor-pointer">
-              <Download size={14} /><span className="hidden sm:inline">Exportar Excel</span><span className="sm:hidden">Excel</span>
+            <button onClick={() => canExport ? void exportInvoicesToExcel(filteredDone.length > 0 ? filteredDone : done) : alert('Exportação disponível no plano Premium.')}
+              className={`flex items-center gap-1.5 sm:gap-2 text-sm sm:text-sm font-medium bg-[#141414] border border-[#2a2a2a] rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 transition-all cursor-pointer ${canExport ? 'text-[#a0998a] hover:text-[#2d9d4e] hover:bg-[rgba(45,157,78,0.1)] hover:border-[#2d9d4e]/30' : 'text-[#8a8580]/50'}`}>
+              <Download size={14} /><span className="hidden sm:inline">{canExport ? 'Exportar Excel' : 'Excel (Premium)'}</span><span className="sm:hidden">Excel</span>
             </button>
           )}
         </div>
@@ -247,7 +250,7 @@ export function InvoicesPage() {
                   <span className="hidden sm:inline px-2.5 py-1 rounded-full text-sm font-semibold uppercase tracking-wider bg-[rgba(45,157,78,0.1)] text-[#2d9d4e]">Processada</span>
                 )}
               </div>
-              {inv.status === 'done' && (
+              {inv.status === 'done' && canExport && (
                 <button onClick={(e) => { e.stopPropagation(); void exportSingleInvoiceToExcel(inv); }}
                   className="text-[#8a8580] hover:text-[#2d9d4e] transition-colors cursor-pointer p-1 rounded-lg hover:bg-[rgba(45,157,78,0.1)] flex-shrink-0 hidden sm:block"
                   aria-label={`Exportar ${inv.fileName}`}>
