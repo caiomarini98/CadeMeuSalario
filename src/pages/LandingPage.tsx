@@ -178,14 +178,10 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-[#2a2a2a] py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-center">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="" className="w-6 h-6 rounded" />
             <span className="text-sm text-[#8a8580]">Cade Meu Salario — cademeusalario.com.br</span>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-[#8a8580]">
-            <a href="https://www.linkedin.com/in/caio-marini/" target="_blank" rel="noopener" className="hover:text-[#f0ece4] transition-colors">LinkedIn</a>
-            <a href="https://github.com/caiomarini98/CadeMeuSalario" target="_blank" rel="noopener" className="hover:text-[#f0ece4] transition-colors">GitHub</a>
           </div>
         </div>
       </footer>
