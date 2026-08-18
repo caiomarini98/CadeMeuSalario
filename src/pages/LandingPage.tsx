@@ -13,10 +13,10 @@ export function LandingPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#2a2a2a]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-3 cursor-pointer">
             <img src="/logo.png" alt="Cadê Meu Salário" className="w-8 h-8 rounded-lg" />
             <span className="text-lg font-bold">Cadê Meu Salário</span>
-          </div>
+          </a>
           <div className="flex items-center gap-3">
             <button onClick={enterDemo}
               className="text-sm text-[#a0998a] hover:text-[#f0ece4] transition-colors cursor-pointer">
