@@ -4,6 +4,8 @@ import { DEMO_STOCKS, DEMO_FIXED_INCOME, DEMO_INVOICES } from './data/demoData';
 import { exchangeCodeForTokens } from './services/authService';
 import { LoginPage } from './pages/LoginPage';
 import { LandingPage } from './pages/LandingPage';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfUse } from './pages/TermsOfUse';
 import { Sidebar, type Page } from './components/Sidebar';
 import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
@@ -119,6 +121,9 @@ function AppContent() {
   }
 
   if (!user) {
+    // Legal pages accessible without login
+    if (window.location.pathname === '/privacidade') return <PrivacyPolicy onBack={() => { window.location.href = '/'; }} />;
+    if (window.location.pathname === '/termos') return <TermsOfUse onBack={() => { window.location.href = '/'; }} />;
     // Show login page if navigated to /app, otherwise show landing page
     if (window.location.pathname === '/app') return <LoginPage />;
     return <LandingPage />;

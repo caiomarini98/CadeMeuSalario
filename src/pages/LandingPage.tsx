@@ -178,10 +178,14 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-[#2a2a2a] py-8 px-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-center">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="" className="w-6 h-6 rounded" />
             <span className="text-sm text-[#8a8580]">Cade Meu Salario — cademeusalario.com.br</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-[#8a8580]">
+            <a href="/privacidade" className="hover:text-[#f0ece4] transition-colors">Politica de Privacidade</a>
+            <a href="/termos" className="hover:text-[#f0ece4] transition-colors">Termos de Uso</a>
           </div>
         </div>
       </footer>
