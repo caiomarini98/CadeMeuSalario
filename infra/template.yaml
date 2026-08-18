@@ -92,8 +92,6 @@ Resources:
     Properties:
       TableName: kdmeusalario-user-data
       BillingMode: PAY_PER_REQUEST
-      SSESpecification:
-        SSEEnabled: true
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -234,7 +232,6 @@ Resources:
       Handler: invoice_worker.handler
       Timeout: 300
       MemorySize: 512
-      ReservedConcurrentExecutions: 2
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref InvoiceBucket

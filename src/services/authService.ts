@@ -129,7 +129,7 @@ export function confirmForgotPassword(email: string, code: string, newPassword: 
   });
 }
 
-const COGNITO_DOMAIN = 'https://kdmeusalario.auth.us-east-1.amazoncognito.com';
+const COGNITO_DOMAIN = 'https://cademeusalario.auth.us-east-1.amazoncognito.com';
 
 export async function exchangeCodeForTokens(code: string): Promise<AuthUser> {
   const redirectUri = window.location.origin + '/callback';
