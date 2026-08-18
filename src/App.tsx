@@ -31,10 +31,10 @@ function AppContent() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    if (code && window.location.pathname === '/callback') {
+    if (code) {
       exchangeCodeForTokens(code)
-        .then(() => { window.location.href = '/'; })
-        .catch((err) => { console.error('OAuth callback error:', err); window.location.href = '/'; });
+        .then(() => { window.history.replaceState({}, '', '/'); window.location.reload(); })
+        .catch((err) => { console.error('OAuth callback error:', err); window.history.replaceState({}, '', '/'); });
     }
   }, []);
 
