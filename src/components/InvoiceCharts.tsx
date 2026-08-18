@@ -8,7 +8,6 @@ import { CategoryIcon } from './CategoryIcon';
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtMonth = (m: string) => { const [y, mo] = m.split('-'); return `${mo}/${y}`; };
-const fmtShort = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0);
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Mercado': '#2d9d4e', 'Alimentação (Trabalho)': '#e08a1e', 'Alimentação (Lazer)': '#f59e0b',
@@ -258,7 +257,7 @@ export function InvoiceCharts({ invoices, selectedInvoiceId }: { invoices: Invoi
             <YAxis tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} width={50} />
             <Tooltip contentStyle={ts} labelStyle={{ color: '#f0ece4' }} itemStyle={{ color: '#f0ece4' }} formatter={(v) => fmt(Number(v))} labelFormatter={(label) => fmtMonth(String(label))} cursor={false} />
             <Bar dataKey="total" fill="#d4a017" radius={[8, 8, 0, 0]}>
-              <LabelList dataKey="total" position="top" fill="#f0ece4" fontSize={11} formatter={(v: unknown) => fmtShort(Number(v))} />
+              <LabelList dataKey="total" position="top" fill="#f0ece4" fontSize={11} formatter={(v: unknown) => fmt(Number(v))} />
             </Bar>
           </BarChart></ResponsiveContainer></div>
         </ChartCard>
