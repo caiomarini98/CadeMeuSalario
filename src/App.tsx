@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 import { DEMO_STOCKS, DEMO_FIXED_INCOME, DEMO_INVOICES } from './data/demoData';
+import { exchangeCodeForTokens } from './services/authService';
 import { LoginPage } from './pages/LoginPage';
 import { Sidebar, type Page } from './components/Sidebar';
 import { HomePage } from './pages/HomePage';
@@ -25,6 +26,17 @@ function AppContent() {
   const [syncing, setSyncing] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const simTour = useSimStore((s) => s.simTour);
+
+  // Handle OAuth callback (Google login redirect)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code && window.location.pathname === '/callback') {
+      exchangeCodeForTokens(code)
+        .then(() => { window.location.href = '/'; })
+        .catch((err) => { console.error('OAuth callback error:', err); window.location.href = '/'; });
+    }
+  }, []);
 
   const completeTour = () => {
     setShowTour(false);

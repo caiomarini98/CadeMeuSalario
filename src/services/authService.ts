@@ -128,3 +128,45 @@ export function confirmForgotPassword(email: string, code: string, newPassword: 
     });
   });
 }
+
+const COGNITO_DOMAIN = 'https://kdmeusalario.auth.us-east-1.amazoncognito.com';
+
+export async function exchangeCodeForTokens(code: string): Promise<AuthUser> {
+  const redirectUri = window.location.origin + '/callback';
+  const res = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: CLIENT_ID,
+      code,
+      redirect_uri: redirectUri,
+    }),
+  });
+
+  if (!res.ok) throw new Error('Failed to exchange code for tokens');
+  const tokens = await res.json();
+
+  // Store tokens in localStorage for the Cognito SDK to pick up
+  const idToken = tokens.id_token;
+  const accessToken = tokens.access_token;
+  const refreshToken = tokens.refresh_token;
+
+  // Parse the ID token to get user info
+  const payload = JSON.parse(atob(idToken.split('.')[1]));
+
+  // Store session in localStorage so cognito-identity-js can find it
+  const keyPrefix = `CognitoIdentityServiceProvider.${CLIENT_ID}`;
+  const username = payload['cognito:username'] || payload.sub;
+  localStorage.setItem(`${keyPrefix}.LastAuthUser`, username);
+  localStorage.setItem(`${keyPrefix}.${username}.idToken`, idToken);
+  localStorage.setItem(`${keyPrefix}.${username}.accessToken`, accessToken);
+  localStorage.setItem(`${keyPrefix}.${username}.refreshToken`, refreshToken);
+
+  return {
+    email: payload.email,
+    name: payload.name || payload.email?.split('@')[0],
+    sub: payload.sub,
+    role: (payload['custom:role'] || 'user') as UserRole,
+  };
+}
