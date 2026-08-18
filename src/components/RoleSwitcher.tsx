@@ -19,7 +19,7 @@ const PLANS: { value: UserPlan | null; label: string }[] = [
 export function RoleSwitcher() {
   const { isAdmin } = useFeatureGate();
   const { simRole, simPlan, setSimRole, setSimPlan, setSimTour } = useSimStore();
-  const [pos, setPos] = useState({ x: 16, y: 16 });
+  const [pos, setPos] = useState({ x: window.innerWidth - 260, y: window.innerHeight - 280 });
   const dragging = useRef(false);
   const offset = useRef({ x: 0, y: 0 });
 
@@ -41,7 +41,7 @@ export function RoleSwitcher() {
 
   return (
     <div className="fixed z-50 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 shadow-xl max-w-[240px]"
-      style={{ right: `${pos.x}px`, bottom: `${pos.y}px` }}>
+      style={{ left: `${pos.x}px`, top: `${pos.y}px` }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-[#d4a017] text-sm font-medium">
           <div onMouseDown={onMouseDown} className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 mr-0.5 hover:bg-[#2a2a2a] rounded">
