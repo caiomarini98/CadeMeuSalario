@@ -333,6 +333,8 @@ Resources:
             ApiId: !Ref InvoiceApi
             Path: /config
             Method: GET
+            Auth:
+              Authorizer: NONE
 
   DemoInvoiceFunction:
     Type: AWS::Serverless::Function

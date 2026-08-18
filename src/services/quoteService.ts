@@ -1,5 +1,4 @@
 import type { StockQuote, StockSearchResult } from '../types';
-import { getIdToken } from './authService';
 
 const BASE_URL = 'https://brapi.dev/api';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -9,10 +8,7 @@ let defaultToken: string | null = null;
 async function fetchDefaultToken(): Promise<string> {
   if (defaultToken) return defaultToken;
   try {
-    const idToken = await getIdToken();
-    const res = await fetch(`${API_URL}/config`, {
-      headers: idToken ? { Authorization: idToken } : {},
-    });
+    const res = await fetch(`${API_URL}/config`);
     if (res.ok) {
       const data = await res.json();
       defaultToken = data.brapiToken ?? '';
