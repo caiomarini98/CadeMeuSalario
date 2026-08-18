@@ -1,21 +1,18 @@
 import { useState } from 'react';
-import { Home, Briefcase, Receipt, Settings, LogOut, Menu, X } from 'lucide-react';
-import { useFeatureGate } from '../hooks/useFeatureGate';
+import { Home, Briefcase, Receipt, LogOut, Menu, X } from 'lucide-react';
 
-export type Page = 'home' | 'portfolio' | 'invoices' | 'settings' | 'income';
+export type Page = 'home' | 'portfolio' | 'invoices' | 'income';
 
-const navItems: { page: Page; label: string; icon: typeof Home; feature?: 'settings' }[] = [
+const navItems: { page: Page; label: string; icon: typeof Home }[] = [
   { page: 'home', label: 'Home', icon: Home },
   { page: 'portfolio', label: 'Carteira', icon: Briefcase },
   { page: 'invoices', label: 'Faturas', icon: Receipt },
-  { page: 'settings', label: 'Config', icon: Settings, feature: 'settings' },
 ];
 
 export function Sidebar({ currentPage, onNavigate, userName, onSignOut }: {
   currentPage: Page; onNavigate: (p: Page) => void; userName?: string; onSignOut?: () => void;
 }) {
-  const { hasAccess } = useFeatureGate();
-  const visibleItems = navItems.filter((item) => !item.feature || hasAccess(item.feature));
+  const visibleItems = navItems;
   const [open, setOpen] = useState(false);
 
   const navigate = (p: Page) => { onNavigate(p); setOpen(false); };

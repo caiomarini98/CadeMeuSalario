@@ -6,7 +6,6 @@ import { Sidebar, type Page } from './components/Sidebar';
 import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { InvoicesPage } from './pages/InvoicesPage';
-import { SettingsPage } from './pages/SettingsPage';
 import { IncomePage } from './pages/IncomePage';
 import { enableSync, loadFromCloud } from './store/syncMiddleware';
 import { usePortfolioStore } from './store/usePortfolioStore';
@@ -136,7 +135,6 @@ function AppContent() {
         {page === 'home' && <HomePage onNavigate={setPage} />}
         {page === 'portfolio' && <PortfolioPage />}
         {page === 'invoices' && <InvoicesPage />}
-        {page === 'settings' && <SettingsPage />}
         {page === 'income' && <IncomePage />}
       </main>
       <RoleSwitcher />

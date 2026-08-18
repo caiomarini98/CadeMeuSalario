@@ -1,4 +1,5 @@
-import { Eye, X, Play } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { Eye, X, Play, GripVertical } from 'lucide-react';
 import { useSimStore } from '../hooks/useFeatureGate';
 import { useFeatureGate } from '../hooks/useFeatureGate';
 import type { UserRole, UserPlan } from '../services/authService';
@@ -18,15 +19,34 @@ const PLANS: { value: UserPlan | null; label: string }[] = [
 export function RoleSwitcher() {
   const { isAdmin } = useFeatureGate();
   const { simRole, simPlan, setSimRole, setSimPlan, setSimTour } = useSimStore();
+  const [pos, setPos] = useState({ x: 16, y: 16 });
+  const dragging = useRef(false);
+  const offset = useRef({ x: 0, y: 0 });
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    dragging.current = true;
+    offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current) return;
+      setPos({ x: ev.clientX - offset.current.x, y: ev.clientY - offset.current.y });
+    };
+    const onUp = () => { dragging.current = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [pos]);
 
   if (!isAdmin && !simRole && !simPlan) return null;
 
   const isSimulating = simRole || simPlan;
 
   return (
-    <div className="fixed bottom-20 md:bottom-4 right-4 z-50 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 shadow-xl max-w-[240px]">
+    <div className="fixed z-50 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 shadow-xl max-w-[240px]"
+      style={{ right: `${pos.x}px`, bottom: `${pos.y}px` }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-[#d4a017] text-sm font-medium">
+          <div onMouseDown={onMouseDown} className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 mr-0.5 hover:bg-[#2a2a2a] rounded">
+            <GripVertical size={12} />
+          </div>
           <Eye size={12} />
           <span>Simular visão</span>
         </div>

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { useAuth } from '../components/AuthProvider';
 import type { UserRole, UserPlan } from '../services/authService';
 
-type Feature = 'advisor' | 'invoices' | 'goals' | 'export' | 'settings';
+type Feature = 'advisor' | 'invoices' | 'goals' | 'export';
 
 interface SimState {
   simRole: UserRole | null;
@@ -27,7 +27,6 @@ const ROLE_ACCESS: Record<Feature, UserRole[]> = {
   invoices: ['admin', 'user'],
   goals: ['admin', 'user'],
   export: ['admin', 'user'],
-  settings: ['admin'],
 };
 
 const PLAN_ACCESS: Record<Feature, UserPlan[]> = {
@@ -35,7 +34,6 @@ const PLAN_ACCESS: Record<Feature, UserPlan[]> = {
   invoices: ['free', 'premium'],
   goals: ['premium'],
   export: ['premium'],
-  settings: ['free', 'premium'],
 };
 
 export function useFeatureGate() {

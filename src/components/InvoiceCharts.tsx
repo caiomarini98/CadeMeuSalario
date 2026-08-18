@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import { Download } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line, PieChart, Pie } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line, PieChart, Pie, LabelList } from 'recharts';
 import type { Invoice } from '../types';
 import { EXPENSE_CATEGORIES } from '../types';
 import { useInvoiceStore, getMonthlyTotals, getCategoryByMonth, getAllCategories } from '../store/useInvoiceStore';
 import { CategoryIcon } from './CategoryIcon';
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtMonth = (m: string) => { const [y, mo] = m.split('-'); return `${mo}/${y}`; };
+const fmtShort = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0);
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Mercado': '#2d9d4e', 'Alimentação (Trabalho)': '#e08a1e', 'Alimentação (Lazer)': '#f59e0b',
@@ -91,9 +93,9 @@ function TrendChart({ trendData, allCats, trendRef }: { trendData: Record<string
       </div>
       <div className="h-64 sm:h-80" ref={trendRef}><ResponsiveContainer width="100%" height="100%"><LineChart data={trendData}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-        <XAxis dataKey="month" tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="month" tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={fmtMonth} />
         <YAxis tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
-        <Tooltip contentStyle={ts} labelStyle={{ color: '#f0ece4' }} itemStyle={{ color: '#f0ece4' }} formatter={(v) => fmt(Number(v))} cursor={false} />
+        <Tooltip contentStyle={ts} labelStyle={{ color: '#f0ece4' }} itemStyle={{ color: '#f0ece4' }} formatter={(v) => fmt(Number(v))} labelFormatter={(label) => fmtMonth(String(label))} cursor={false} />
         {allCats.filter((c) => visibleCats.has(c)).map((c) => <Line key={c} type="monotone" dataKey={c} stroke={catColor(c, allCats.indexOf(c))} strokeWidth={2.5} dot={false} />)}
       </LineChart></ResponsiveContainer></div>
     </ChartCard>
@@ -250,12 +252,14 @@ export function InvoiceCharts({ invoices, selectedInvoiceId }: { invoices: Invoi
       {/* Monthly totals */}
       {monthData.length > 1 && (
         <ChartCard title="Total por mês" dlRef={monthRef} dlName="total_mensal">
-          <div className="h-64 sm:h-80" ref={monthRef}><ResponsiveContainer width="100%" height="100%"><BarChart data={monthData}>
+          <div className="h-64 sm:h-80" ref={monthRef}><ResponsiveContainer width="100%" height="100%"><BarChart data={monthData} margin={{ top: 30 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-            <XAxis dataKey="month" tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="month" tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={fmtMonth} />
             <YAxis tick={{ fill: '#8a8580', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} width={50} />
-            <Tooltip contentStyle={ts} labelStyle={{ color: '#f0ece4' }} itemStyle={{ color: '#f0ece4' }} formatter={(v) => fmt(Number(v))} cursor={false} />
-            <Bar dataKey="total" fill="#d4a017" radius={[8, 8, 0, 0]} />
+            <Tooltip contentStyle={ts} labelStyle={{ color: '#f0ece4' }} itemStyle={{ color: '#f0ece4' }} formatter={(v) => fmt(Number(v))} labelFormatter={(label) => fmtMonth(String(label))} cursor={false} />
+            <Bar dataKey="total" fill="#d4a017" radius={[8, 8, 0, 0]}>
+              <LabelList dataKey="total" position="top" fill="#f0ece4" fontSize={11} formatter={(v: unknown) => fmtShort(Number(v))} />
+            </Bar>
           </BarChart></ResponsiveContainer></div>
         </ChartCard>
       )}
