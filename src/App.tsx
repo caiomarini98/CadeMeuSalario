@@ -49,9 +49,9 @@ function AppContent() {
         })
         .catch((err) => {
           console.error('OAuth callback error:', err);
+          alert('Erro OAuth: ' + (err instanceof Error ? err.message : String(err)));
           setOauthProcessing(false);
           window.history.replaceState({}, '', '/app');
-          window.location.reload();
         });
     }
   }, []);

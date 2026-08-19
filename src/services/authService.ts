@@ -155,7 +155,7 @@ export function confirmForgotPassword(email: string, code: string, newPassword: 
 const COGNITO_DOMAIN = 'https://cademeusalario.auth.us-east-1.amazoncognito.com';
 
 export async function exchangeCodeForTokens(code: string): Promise<AuthUser> {
-  const redirectUri = window.location.origin + '/callback';
+  const redirectUri = window.location.origin;
   const res = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -167,7 +167,10 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthUser> {
     }),
   });
 
-  if (!res.ok) throw new Error('Failed to exchange code for tokens');
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Token exchange failed: ${res.status} ${errBody}`);
+  }
   const tokens = await res.json();
 
   // Store tokens in localStorage for the Cognito SDK to pick up
