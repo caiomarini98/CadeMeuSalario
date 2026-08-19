@@ -31,29 +31,50 @@ function AppContent() {
   const [showTour, setShowTour] = useState(false);
   const simTour = useSimStore((s) => s.simTour);
 
-  // Handle OAuth callback (Google login redirect)
+  // Handle OAuth callback (Google login redirect — implicit flow, tokens in hash)
   const [oauthProcessing, setOauthProcessing] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return !!params.get('code');
+    return !!window.location.hash.includes('id_token=') || !!new URLSearchParams(window.location.search).get('code');
   });
   const oauthHandled = useRef(false);
 
   useEffect(() => {
     if (oauthHandled.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
+
+    // Implicit flow: tokens in hash fragment
+    const hash = window.location.hash.substring(1);
+    if (hash.includes('id_token=')) {
+      oauthHandled.current = true;
+      setOauthProcessing(true);
+      const params = new URLSearchParams(hash);
+      const idToken = params.get('id_token') || '';
+      const accessToken = params.get('access_token') || '';
+
+      try {
+        const payload = JSON.parse(atob(idToken.split('.')[1]));
+        const keyPrefix = `CognitoIdentityServiceProvider.${import.meta.env.VITE_COGNITO_CLIENT_ID}`;
+        const username = payload['cognito:username'] || payload.sub;
+        localStorage.setItem(`${keyPrefix}.LastAuthUser`, username);
+        localStorage.setItem(`${keyPrefix}.${username}.idToken`, idToken);
+        localStorage.setItem(`${keyPrefix}.${username}.accessToken`, accessToken);
+        window.location.href = '/';
+      } catch (err) {
+        console.error('OAuth token parse error:', err);
+        setOauthProcessing(false);
+      }
+      return;
+    }
+
+    // Legacy code flow fallback
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get('code');
     if (code) {
       oauthHandled.current = true;
-      // Remove code from URL immediately to prevent reuse
       window.history.replaceState({}, '', window.location.pathname);
       setOauthProcessing(true);
       exchangeCodeForTokens(code)
-        .then(() => {
-          window.location.href = '/';
-        })
+        .then(() => { window.location.href = '/'; })
         .catch((err) => {
           console.error('OAuth callback error:', err);
-          alert('Erro OAuth: ' + (err instanceof Error ? err.message : String(err)));
           setOauthProcessing(false);
         });
     }
