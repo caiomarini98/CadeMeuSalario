@@ -43,8 +43,16 @@ function AppContent() {
     if (code) {
       setOauthProcessing(true);
       exchangeCodeForTokens(code)
-        .then(() => { window.history.replaceState({}, '', '/'); window.location.reload(); })
-        .catch((err) => { console.error('OAuth callback error:', err); setOauthProcessing(false); window.history.replaceState({}, '', '/app'); });
+        .then(() => {
+          window.history.replaceState({}, '', '/');
+          window.location.reload();
+        })
+        .catch((err) => {
+          console.error('OAuth callback error:', err);
+          setOauthProcessing(false);
+          window.history.replaceState({}, '', '/app');
+          window.location.reload();
+        });
     }
   }, []);
 
@@ -131,8 +139,8 @@ function AppContent() {
     // Legal pages accessible without login
     if (window.location.pathname === '/privacidade') return <PrivacyPolicy onBack={() => { window.location.href = '/'; }} />;
     if (window.location.pathname === '/termos') return <TermsOfUse onBack={() => { window.location.href = '/'; }} />;
-    // Show login page if navigated to /app, otherwise show landing page
-    if (window.location.pathname === '/app') return <LoginPage />;
+    // Show login page if navigated to /app or /callback, otherwise show landing page
+    if (window.location.pathname === '/app' || window.location.pathname === '/callback') return <LoginPage />;
     return <LandingPage />;
   }
 
