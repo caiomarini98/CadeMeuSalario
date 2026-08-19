@@ -232,6 +232,7 @@ Resources:
       Handler: invoice_worker.handler
       Timeout: 300
       MemorySize: 512
+      ReservedConcurrentExecutions: 2
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref InvoiceBucket
