@@ -25,18 +25,40 @@ export interface AuthUser {
 
 export function getCurrentUser(): Promise<AuthUser | null> {
   return new Promise((resolve) => {
-    if (!userPool) return resolve(null);
+    if (!userPool) return resolve(tryOAuthSession());
     const user = userPool.getCurrentUser();
-    if (!user) return resolve(null);
+    if (!user) return resolve(tryOAuthSession());
     user.getSession((err: Error | null) => {
-      if (err) return resolve(null);
+      if (err) return resolve(tryOAuthSession());
       user.getUserAttributes((err2, attrs) => {
-        if (err2 || !attrs) return resolve(null);
+        if (err2 || !attrs) return resolve(tryOAuthSession());
         const get = (name: string) => attrs.find((a) => a.getName() === name)?.getValue() ?? '';
         resolve({ email: get('email'), name: get('name') || undefined, sub: get('sub'), role: (get('custom:role') || 'user') as UserRole, plan: get('custom:plan') || 'free' });
       });
     });
   });
+}
+
+function tryOAuthSession(): AuthUser | null {
+  try {
+    const keyPrefix = `CognitoIdentityServiceProvider.${CLIENT_ID}`;
+    const lastUser = localStorage.getItem(`${keyPrefix}.LastAuthUser`);
+    if (!lastUser) return null;
+    const idToken = localStorage.getItem(`${keyPrefix}.${lastUser}.idToken`);
+    if (!idToken) return null;
+    const payload = JSON.parse(atob(idToken.split('.')[1]));
+    // Check if token is expired
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+    return {
+      email: payload.email || '',
+      name: payload.name || payload.email?.split('@')[0],
+      sub: payload.sub,
+      role: (payload['custom:role'] || 'user') as UserRole,
+      plan: payload['custom:plan'] || 'free',
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function getIdToken(): Promise<string | null> {
