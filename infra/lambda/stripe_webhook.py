@@ -11,7 +11,6 @@ cognito = boto3.client('cognito-idp')
 
 USER_POOL_ID = os.environ.get('USER_POOL_ID', '')
 
-_stripe_key = None
 _webhook_secret = None
 
 
@@ -24,25 +23,39 @@ def get_webhook_secret():
 
 
 def verify_signature(payload, sig_header):
-    """Verify Stripe webhook signature."""
+    """Verify Stripe webhook signature (v1 scheme).
+
+    Stripe signs webhooks using HMAC-SHA256 with a timestamp to prevent replay attacks.
+    See: https://docs.stripe.com/webhooks/signatures
+    """
     secret = get_webhook_secret()
-    
-    elements = dict(item.split('=', 1) for item in sig_header.split(','))
+
+    # Parse signature header: "t=<timestamp>,v1=<signature>"
+    elements = {}
+    for item in sig_header.split(','):
+        parts = item.split('=', 1)
+        if len(parts) == 2:
+            elements[parts[0].strip()] = parts[1].strip()
+
     timestamp = elements.get('t', '')
     signature = elements.get('v1', '')
-    
+
     if not timestamp or not signature:
         return False
-    
-    # Check timestamp tolerance (5 min)
-    if abs(time.time() - int(timestamp)) > 300:
+
+    # Reject events older than 5 minutes (replay protection)
+    try:
+        if abs(time.time() - int(timestamp)) > 300:
+            return False
+    except (ValueError, TypeError):
         return False
-    
+
+    # Compute expected signature
     signed_payload = f"{timestamp}.{payload}"
     expected = hmac.new(
         secret.encode(), signed_payload.encode(), hashlib.sha256
     ).hexdigest()
-    
+
     return hmac.compare_digest(expected, signature)
 
 
@@ -57,16 +70,16 @@ def update_user_plan(user_id, plan):
         )
         users = resp.get('Users', [])
         if not users:
-            print(f"User not found: {user_id}")
+            print(f"User not found for plan update")
             return
-        
+
         username = users[0]['Username']
         cognito.admin_update_user_attributes(
             UserPoolId=USER_POOL_ID,
             Username=username,
             UserAttributes=[{'Name': 'custom:plan', 'Value': plan}],
         )
-        print(f"Updated user {username} plan to: {plan}")
+        print(f"Updated user plan to: {plan}")
     except Exception as e:
         print(f"Error updating plan: {e}")
 
@@ -75,21 +88,27 @@ def handler(event, context):
     try:
         body = event.get('body', '')
         sig = event.get('headers', {}).get('stripe-signature', '')
-        
-        # Parse event (skip signature verification in test mode for now)
+
+        # SECURITY: Verify webhook signature before processing
+        if not sig:
+            print("Missing stripe-signature header")
+            return {'statusCode': 401, 'body': json.dumps({'error': 'Missing signature'})}
+
+        if not verify_signature(body, sig):
+            print("Invalid webhook signature — rejecting event")
+            return {'statusCode': 401, 'body': json.dumps({'error': 'Invalid signature'})}
+
         stripe_event = json.loads(body)
         event_type = stripe_event.get('type', '')
         data = stripe_event.get('data', {}).get('object', {})
-        
+
         print(f"Stripe event: {event_type}")
 
         if event_type == 'checkout.session.completed':
             user_id = data.get('client_reference_id', '')
             if user_id:
-                # Determine plan from price
-                subscription_id = data.get('subscription', '')
                 update_user_plan(user_id, 'premium')
-                print(f"Checkout completed for user {user_id}")
+                print(f"Checkout completed — plan upgraded")
 
         elif event_type == 'customer.subscription.created':
             metadata = data.get('metadata', {})
@@ -115,6 +134,9 @@ def handler(event, context):
 
         return {'statusCode': 200, 'body': json.dumps({'received': True})}
 
+    except json.JSONDecodeError:
+        print("Invalid JSON in webhook body")
+        return {'statusCode': 400, 'body': json.dumps({'error': 'Invalid JSON'})}
     except Exception as e:
-        print(f"Webhook error: {e}")
-        return {'statusCode': 200, 'body': json.dumps({'received': True})}
+        print(f"Webhook error: {type(e).__name__}")
+        return {'statusCode': 500, 'body': json.dumps({'error': 'Internal error'})}

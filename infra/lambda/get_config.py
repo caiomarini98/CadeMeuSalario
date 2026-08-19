@@ -1,3 +1,4 @@
+"""Return app configuration (Brapi token) — requires Cognito auth."""
 import json
 import boto3
 
@@ -10,13 +11,13 @@ def handler(event, context):
         token = result['Parameter']['Value']
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'brapiToken': token}),
         }
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error fetching config: {type(e).__name__}")
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'error': 'Internal server error'}),
         }

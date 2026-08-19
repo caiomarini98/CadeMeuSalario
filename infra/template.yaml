@@ -336,8 +336,6 @@ Resources:
             ApiId: !Ref InvoiceApi
             Path: /config
             Method: GET
-            Auth:
-              Authorizer: NONE
 
   # ==================== STRIPE BILLING ====================
   CreateCheckoutFunction:

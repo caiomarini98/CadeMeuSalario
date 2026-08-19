@@ -12,10 +12,14 @@ def get_user_id(event):
     return claims.get('sub', '')
 
 
+# Whitelist of allowed dataTypes — prevents access to internal keys (rate_limit#, file-hash#, etc.)
+ALLOWED_DATA_TYPES = {'portfolio', 'invoices', 'fixedIncome', 'goals', 'income', 'settings', 'alerts'}
+
+
 def respond(status, body):
     return {
         'statusCode': status,
-        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'headers': {'Content-Type': 'application/json'},
         'body': json.dumps(body),
     }
 
@@ -31,6 +35,9 @@ def handler(event, context):
 
         if not data_type:
             return respond(400, {'error': 'dataType required'})
+
+        if data_type not in ALLOWED_DATA_TYPES:
+            return respond(400, {'error': 'Invalid dataType'})
 
         if method == 'GET':
             result = table.get_item(Key={'userId': user_id, 'dataType': data_type})

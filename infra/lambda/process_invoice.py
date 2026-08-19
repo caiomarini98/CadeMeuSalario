@@ -1,7 +1,7 @@
 import json
 import os
 import boto3
-from rate_limit import get_user_id, get_user_plan, check_rate_limit, increment_usage
+from rate_limit import get_user_id, get_user_plan, check_and_increment
 
 sqs = boto3.client('sqs')
 QUEUE_URL = os.environ['INVOICE_QUEUE_URL']
@@ -14,9 +14,9 @@ def handler(event, context):
         if not user_id:
             return {'statusCode': 401, 'body': json.dumps({'error': 'Unauthorized'})}
 
-        # Double-check rate limit (defense in depth — already checked at upload-url)
+        # Atomic rate limit check + increment (prevents race conditions)
         plan = get_user_plan(event)
-        allowed, remaining, limit = check_rate_limit(user_id, plan)
+        allowed, remaining, limit = check_and_increment(user_id, plan)
         if not allowed:
             return {
                 'statusCode': 429,
@@ -35,9 +35,6 @@ def handler(event, context):
 
         if not key.startswith(f"uploads/{user_id}/"):
             return {'statusCode': 403, 'body': json.dumps({'error': 'Access denied'})}
-
-        # Increment usage counter NOW (before processing, to prevent race conditions)
-        increment_usage(user_id)
 
         # Send to SQS for async processing
         msg_params = {
