@@ -59,6 +59,11 @@ Resources:
           Mutable: true
           StringAttributeConstraints:
             MaxLength: '20'
+        - Name: plan
+          AttributeDataType: String
+          Mutable: true
+          StringAttributeConstraints:
+            MaxLength: '20'
 
   PreSignUpPermission:
     Type: AWS::Lambda::Permission
@@ -331,6 +336,62 @@ Resources:
             ApiId: !Ref InvoiceApi
             Path: /config
             Method: GET
+            Auth:
+              Authorizer: NONE
+
+  # ==================== STRIPE BILLING ====================
+  CreateCheckoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-create-checkout
+      CodeUri: lambda/
+      Handler: create_checkout.handler
+      Timeout: 15
+      MemorySize: 128
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/kdmeusalario/*
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /checkout
+            Method: POST
+
+  StripeWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kdmeusalario-stripe-webhook
+      CodeUri: lambda/
+      Handler: stripe_webhook.handler
+      Timeout: 15
+      MemorySize: 128
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPool
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/kdmeusalario/*
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminUpdateUserAttributes
+              Resource: !GetAtt UserPool.Arn
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref InvoiceApi
+            Path: /stripe-webhook
+            Method: POST
             Auth:
               Authorizer: NONE
 

@@ -118,47 +118,51 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing preview */}
+      {/* Pricing */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simples e acessível</h2>
-          <p className="text-[#a0998a] text-lg mb-12">Comece grátis. Upgrade quando precisar.</p>
+          <p className="text-[#a0998a] text-lg mb-12">7 dias grátis para testar. Cancele quando quiser.</p>
 
           <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 text-left">
-              <p className="text-[#8a8580] text-sm font-semibold uppercase tracking-wider mb-2">Gratuito</p>
-              <p className="text-3xl font-bold mb-1">R$0</p>
-              <p className="text-[#8a8580] text-sm mb-6">para sempre</p>
+              <p className="text-[#8a8580] text-sm font-semibold uppercase tracking-wider mb-2">Essencial</p>
+              <p className="text-3xl font-bold mb-1">R$9<span className="text-lg">,90</span></p>
+              <p className="text-[#8a8580] text-sm mb-6">por mês</p>
               <ul className="space-y-3">
-                <PricingItem text="1 fatura por mês" />
+                <PricingItem text="5 faturas por mês" />
                 <PricingItem text="Categorização com IA" />
-                <PricingItem text="Gráficos básicos" />
-                <PricingItem text="Carteira de investimentos" />
+                <PricingItem text="Gráficos e tendências" />
+                <PricingItem text="Alertas por categoria" />
+                <PricingItem text="Exportar Excel" />
               </ul>
-              <button onClick={enterDemo}
+              <button onClick={() => { scrollToLogin(); }}
                 className="w-full mt-8 py-3 border border-[#2a2a2a] hover:border-[#d4a017] rounded-xl text-[#a0998a] hover:text-[#d4a017] font-medium transition-all cursor-pointer">
-                Começar grátis
+                Começar 7 dias grátis
               </button>
+              <p className="text-[#8a8580] text-xs text-center mt-2">ou R$89,90/ano (25% off)</p>
             </div>
 
             <div className="bg-[#141414] border border-[#d4a017]/30 rounded-2xl p-8 text-left relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#d4a017] text-[#1a1a1a] text-xs font-bold px-3 py-1 rounded-full uppercase">
-                Em breve
+                Mais popular
               </div>
-              <p className="text-[#d4a017] text-sm font-semibold uppercase tracking-wider mb-2">Premium</p>
-              <p className="text-3xl font-bold mb-1">R$14<span className="text-lg">,90</span></p>
+              <p className="text-[#d4a017] text-sm font-semibold uppercase tracking-wider mb-2">Pro</p>
+              <p className="text-3xl font-bold mb-1">R$19<span className="text-lg">,90</span></p>
               <p className="text-[#8a8580] text-sm mb-6">por mês</p>
               <ul className="space-y-3">
-                <PricingItem text="5 faturas por mês" />
-                <PricingItem text="Alertas por categoria" />
+                <PricingItem text="Faturas ilimitadas" />
+                <PricingItem text="Tudo do Essencial" />
+                <PricingItem text="Alertas ilimitados" />
                 <PricingItem text="Relatório compartilhável" />
-                <PricingItem text="Exportar Excel" />
                 <PricingItem text="Histórico completo" />
+                <PricingItem text="Suporte prioritário" />
               </ul>
-              <button disabled
-                className="w-full mt-8 py-3 bg-[#d4a017]/20 text-[#d4a017] rounded-xl font-medium cursor-not-allowed">
-                Em breve
+              <button onClick={() => { scrollToLogin(); }}
+                className="w-full mt-8 py-3 bg-[#d4a017] hover:bg-[#b8890f] text-[#1a1a1a] rounded-xl font-semibold transition-all cursor-pointer">
+                Começar 7 dias grátis
               </button>
+              <p className="text-[#8a8580] text-xs text-center mt-2">ou R$179,90/ano (25% off)</p>
             </div>
           </div>
         </div>
