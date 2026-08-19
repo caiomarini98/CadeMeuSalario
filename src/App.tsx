@@ -32,13 +32,19 @@ function AppContent() {
   const simTour = useSimStore((s) => s.simTour);
 
   // Handle OAuth callback (Google login redirect)
+  const [oauthProcessing, setOauthProcessing] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return !!params.get('code');
+  });
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
+      setOauthProcessing(true);
       exchangeCodeForTokens(code)
         .then(() => { window.history.replaceState({}, '', '/'); window.location.reload(); })
-        .catch((err) => { console.error('OAuth callback error:', err); window.history.replaceState({}, '', '/'); });
+        .catch((err) => { console.error('OAuth callback error:', err); setOauthProcessing(false); window.history.replaceState({}, '', '/app'); });
     }
   }, []);
 
@@ -113,7 +119,7 @@ function AppContent() {
     });
   }, [user, isDemo]);
 
-  if (authLoading) {
+  if (authLoading || oauthProcessing) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <Loader2 size={32} className="animate-spin text-[#d4a017]" />
