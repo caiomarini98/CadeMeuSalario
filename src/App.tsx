@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 import { DEMO_STOCKS, DEMO_FIXED_INCOME, DEMO_INVOICES } from './data/demoData';
 import { exchangeCodeForTokens } from './services/authService';
@@ -36,22 +36,25 @@ function AppContent() {
     const params = new URLSearchParams(window.location.search);
     return !!params.get('code');
   });
+  const oauthHandled = useRef(false);
 
   useEffect(() => {
+    if (oauthHandled.current) return;
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
+      oauthHandled.current = true;
+      // Remove code from URL immediately to prevent reuse
+      window.history.replaceState({}, '', window.location.pathname);
       setOauthProcessing(true);
       exchangeCodeForTokens(code)
         .then(() => {
-          window.history.replaceState({}, '', '/');
-          window.location.reload();
+          window.location.href = '/';
         })
         .catch((err) => {
           console.error('OAuth callback error:', err);
           alert('Erro OAuth: ' + (err instanceof Error ? err.message : String(err)));
           setOauthProcessing(false);
-          window.history.replaceState({}, '', '/app');
         });
     }
   }, []);
