@@ -5,8 +5,8 @@ import boto3
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ.get('USER_DATA_TABLE', 'kdmeusalario-user-data'))
 
-# Limits per plan: free=1, essencial/premium=5, pro=unlimited, admin=unlimited
-MONTHLY_LIMITS = {'free': 1, 'premium': 5, 'essencial': 5, 'pro': 999999, 'admin': 999999}
+# Limits per plan: no free tier, must subscribe
+MONTHLY_LIMITS = {'free': 0, 'premium': 5, 'essencial': 5, 'pro': 999999, 'admin': 999999}
 
 
 def get_user_id(event):

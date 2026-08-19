@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { LandingPage } from './pages/LandingPage';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfUse } from './pages/TermsOfUse';
+import { Paywall } from './components/Paywall';
 import { Sidebar, type Page } from './components/Sidebar';
 import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
@@ -127,6 +128,12 @@ function AppContent() {
     // Show login page if navigated to /app, otherwise show landing page
     if (window.location.pathname === '/app') return <LoginPage />;
     return <LandingPage />;
+  }
+
+  // If user has no active plan and is not admin/demo, show paywall
+  const hasPlan = user.role === 'admin' || isDemo || (user.plan && user.plan !== 'free');
+  if (!hasPlan && window.location.search !== '?checkout=success') {
+    return <Paywall userName={user.name ?? user.email} />;
   }
 
   if (syncing) {

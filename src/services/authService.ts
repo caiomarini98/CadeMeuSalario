@@ -20,6 +20,7 @@ export interface AuthUser {
   name?: string;
   sub: string;
   role: UserRole;
+  plan?: string;
 }
 
 export function getCurrentUser(): Promise<AuthUser | null> {
@@ -32,7 +33,7 @@ export function getCurrentUser(): Promise<AuthUser | null> {
       user.getUserAttributes((err2, attrs) => {
         if (err2 || !attrs) return resolve(null);
         const get = (name: string) => attrs.find((a) => a.getName() === name)?.getValue() ?? '';
-        resolve({ email: get('email'), name: get('name') || undefined, sub: get('sub'), role: (get('custom:role') || 'user') as UserRole });
+        resolve({ email: get('email'), name: get('name') || undefined, sub: get('sub'), role: (get('custom:role') || 'user') as UserRole, plan: get('custom:plan') || 'free' });
       });
     });
   });
@@ -83,7 +84,7 @@ export function signIn(email: string, password: string): Promise<AuthUser> {
     user.authenticateUser(authDetails, {
       onSuccess: (session) => {
         const payload = session.getIdToken().decodePayload();
-        resolve({ email: payload.email, name: payload.name, sub: payload.sub, role: (payload['custom:role'] || 'user') as UserRole });
+        resolve({ email: payload.email, name: payload.name, sub: payload.sub, role: (payload['custom:role'] || 'user') as UserRole, plan: payload['custom:plan'] || 'free' });
       },
       onFailure: (err) => reject(new Error(err.message)),
     });
@@ -168,5 +169,6 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthUser> {
     name: payload.name || payload.email?.split('@')[0],
     sub: payload.sub,
     role: (payload['custom:role'] || 'user') as UserRole,
+    plan: payload['custom:plan'] || 'free',
   };
 }
