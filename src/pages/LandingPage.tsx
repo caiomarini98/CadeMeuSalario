@@ -44,14 +44,14 @@ export function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button onClick={enterDemo}
               className="flex items-center gap-2 bg-[#d4a017] hover:bg-[#b8890f] text-[#1a1a1a] font-semibold px-8 py-4 rounded-xl text-lg transition-all hover:shadow-[0_8px_24px_rgba(212,160,23,0.3)] cursor-pointer">
-              Testar Gratis <ArrowRight size={20} />
+              Testar Grátis <ArrowRight size={20} />
             </button>
             <button onClick={scrollToLogin}
               className="flex items-center gap-2 border border-[#2a2a2a] hover:border-[#d4a017]/50 text-[#a0998a] hover:text-[#f0ece4] font-medium px-8 py-4 rounded-xl text-lg transition-all cursor-pointer">
               Criar conta
             </button>
           </div>
-          <p className="text-[#8a8580] text-sm mt-4">Sem cartao de credito. Explore com dados fictícios.</p>
+          <p className="text-[#8a8580] text-sm mt-4">Sem cartão de crédito. Explore com dados fictícios.</p>
         </div>
       </section>
 
@@ -64,15 +64,15 @@ export function LandingPage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-[#d4a017]">12+</p>
-            <p className="text-sm text-[#8a8580]">categorias automaticas</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[#d4a017]">80%</p>
-            <p className="text-sm text-[#8a8580]">menor custo vs OCR puro</p>
+            <p className="text-sm text-[#8a8580]">categorias automáticas</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-[#d4a017]">PDF/Foto</p>
             <p className="text-sm text-[#8a8580]">qualquer formato</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-[#d4a017]">Todos os bancos</p>
+            <p className="text-sm text-[#8a8580]">Nubank, Santander, Inter...</p>
           </div>
         </div>
       </section>
@@ -80,24 +80,24 @@ export function LandingPage() {
       {/* Features */}
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">Tudo que voce precisa para controlar seus gastos</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">Tudo que você precisa para controlar seus gastos</h2>
           <p className="text-[#a0998a] text-center text-lg mb-16 max-w-2xl mx-auto">
-            De upload a insight em segundos. Sem complicacao.
+            De upload a insight em segundos. Sem complicação.
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <FeatureCard icon={<Brain size={24} />} title="IA que entende sua fatura"
-              description="Claude Sonnet analisa cada linha e categoriza automaticamente: mercado, transporte, assinaturas, lazer..." />
+              description="Nossa inteligência artificial analisa cada linha e categoriza automaticamente: mercado, transporte, assinaturas, lazer..." />
             <FeatureCard icon={<Zap size={24} />} title="Upload e pronto"
-              description="Arraste o PDF ou tire foto da fatura. Em 30 segundos voce tem o resultado completo." />
-            <FeatureCard icon={<BarChart3 size={24} />} title="Graficos e tendencias"
-              description="Veja pra onde vai seu dinheiro mes a mes. Identifique padroes e corte gastos desnecessarios." />
+              description="Arraste o PDF ou tire foto da fatura. Em 30 segundos você tem o resultado completo." />
+            <FeatureCard icon={<BarChart3 size={24} />} title="Gráficos e tendências"
+              description="Veja pra onde vai seu dinheiro mês a mês. Identifique padrões e corte gastos desnecessários." />
             <FeatureCard icon={<Shield size={24} />} title="Alertas de gastos"
               description="Defina limites por categoria. Receba alerta visual quando estiver perto de estourar." />
             <FeatureCard icon={<TrendingUp size={24} />} title="Carteira de investimentos"
-              description="Acompanhe acoes e renda fixa. Cotacoes em tempo real. Evolucao do patrimonio." />
-            <FeatureCard icon={<Receipt size={24} />} title="Multi-cartao"
-              description="Processe faturas de qualquer banco. Nubank, Santander, Inter, Itau — todos funcionam." />
+              description="Acompanhe ações e renda fixa. Cotações em tempo real. Evolução do patrimônio." />
+            <FeatureCard icon={<Receipt size={24} />} title="Multi-cartão"
+              description="Processe faturas de qualquer banco. Nubank, Santander, Inter, Itaú — todos funcionam." />
           </div>
         </div>
       </section>
@@ -111,9 +111,9 @@ export function LandingPage() {
             <Step number="1" title="Envie sua fatura"
               description="Arraste o PDF do seu banco ou tire uma foto. Aceita qualquer formato de fatura brasileira." />
             <Step number="2" title="IA categoriza tudo"
-              description="Nossa inteligencia artificial le cada transacao e classifica em categorias como Mercado, Transporte, Assinaturas, Lazer e mais." />
+              description="Nossa inteligência artificial lê cada transação e classifica em categorias como Mercado, Transporte, Assinaturas, Lazer e mais." />
             <Step number="3" title="Visualize seus gastos"
-              description="Graficos interativos mostram pra onde vai seu dinheiro. Compare meses, identifique tendencias, defina alertas." />
+              description="Gráficos interativos mostram pra onde vai seu dinheiro. Compare meses, identifique tendências, defina alertas." />
           </div>
         </div>
       </section>
@@ -121,8 +121,8 @@ export function LandingPage() {
       {/* Pricing preview */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simples e acessivel</h2>
-          <p className="text-[#a0998a] text-lg mb-12">Comece gratis. Upgrade quando precisar.</p>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simples e acessível</h2>
+          <p className="text-[#a0998a] text-lg mb-12">Comece grátis. Upgrade quando precisar.</p>
 
           <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 text-left">
@@ -130,14 +130,14 @@ export function LandingPage() {
               <p className="text-3xl font-bold mb-1">R$0</p>
               <p className="text-[#8a8580] text-sm mb-6">para sempre</p>
               <ul className="space-y-3">
-                <PricingItem text="1 fatura por mes" />
+                <PricingItem text="1 fatura por mês" />
                 <PricingItem text="Categorização com IA" />
-                <PricingItem text="Graficos basicos" />
+                <PricingItem text="Gráficos básicos" />
                 <PricingItem text="Carteira de investimentos" />
               </ul>
               <button onClick={enterDemo}
                 className="w-full mt-8 py-3 border border-[#2a2a2a] hover:border-[#d4a017] rounded-xl text-[#a0998a] hover:text-[#d4a017] font-medium transition-all cursor-pointer">
-                Comecar gratis
+                Começar grátis
               </button>
             </div>
 
@@ -147,13 +147,13 @@ export function LandingPage() {
               </div>
               <p className="text-[#d4a017] text-sm font-semibold uppercase tracking-wider mb-2">Premium</p>
               <p className="text-3xl font-bold mb-1">R$14<span className="text-lg">,90</span></p>
-              <p className="text-[#8a8580] text-sm mb-6">por mes</p>
+              <p className="text-[#8a8580] text-sm mb-6">por mês</p>
               <ul className="space-y-3">
-                <PricingItem text="5 faturas por mes" />
+                <PricingItem text="5 faturas por mês" />
                 <PricingItem text="Alertas por categoria" />
-                <PricingItem text="Relatorio compartilhavel" />
+                <PricingItem text="Relatório compartilhável" />
                 <PricingItem text="Exportar Excel" />
-                <PricingItem text="Historico completo" />
+                <PricingItem text="Histórico completo" />
               </ul>
               <button disabled
                 className="w-full mt-8 py-3 bg-[#d4a017]/20 text-[#d4a017] rounded-xl font-medium cursor-not-allowed">
@@ -168,7 +168,7 @@ export function LandingPage() {
       <section className="py-20 px-6 bg-[#141414]">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Pare de adivinhar. Comece a entender.</h2>
-          <p className="text-[#a0998a] text-lg mb-8">Sua fatura tem a resposta. Nossa IA descobre pra voce.</p>
+          <p className="text-[#a0998a] text-lg mb-8">Sua fatura tem a resposta. Nossa IA descobre pra você.</p>
           <button onClick={enterDemo}
             className="inline-flex items-center gap-2 bg-[#d4a017] hover:bg-[#b8890f] text-[#1a1a1a] font-semibold px-8 py-4 rounded-xl text-lg transition-all hover:shadow-[0_8px_24px_rgba(212,160,23,0.3)] cursor-pointer">
             Explorar o app <ArrowRight size={20} />
@@ -181,10 +181,10 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="" className="w-6 h-6 rounded" />
-            <span className="text-sm text-[#8a8580]">Cade Meu Salario — cademeusalario.com.br</span>
+            <span className="text-sm text-[#8a8580]">Cadê Meu Salário — cademeusalario.com.br</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-[#8a8580]">
-            <a href="/privacidade" className="hover:text-[#f0ece4] transition-colors">Politica de Privacidade</a>
+            <a href="/privacidade" className="hover:text-[#f0ece4] transition-colors">Política de Privacidade</a>
             <a href="/termos" className="hover:text-[#f0ece4] transition-colors">Termos de Uso</a>
           </div>
         </div>
